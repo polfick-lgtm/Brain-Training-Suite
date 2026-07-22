@@ -28,6 +28,8 @@ Le modifiche rilevanti al progetto sono documentate in questo file secondo i pri
 - prompt PWA per disponibilità offline e aggiornamenti;
 - fallback GitHub Pages per refresh diretto delle route profonde;
 - test Playwright della build installata e riaperta senza rete.
+- matrice E2E estesa a giochi, persistenza, sessioni, coach, route dirette e viewport mobile/tablet;
+- controlli CI completi per unit test, copertura, build, browser e comportamento PWA offline.
 
 ## [0.1.0] - 2026-07-22
 

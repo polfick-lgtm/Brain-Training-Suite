@@ -228,3 +228,42 @@ test('resta utilizzabile su una viewport mobile', async ({ page }) => {
     .evaluate((element) => element.scrollWidth)
   expect(bodyWidth).toBeLessThanOrEqual(390)
 })
+
+for (const viewport of [
+  { width: 320, height: 568, label: 'mobile compatto' },
+  { width: 768, height: 1024, label: 'tablet' },
+] as const) {
+  test(`layout ${viewport.label} senza overflow`, async ({ page }) => {
+    await page.setViewportSize(viewport)
+    await page.goto('./giochi')
+    await expect(
+      page.getByRole('heading', { name: 'Giochi', level: 1 }),
+    ).toBeVisible()
+    const width = await page
+      .locator('body')
+      .evaluate((element) => element.scrollWidth)
+    expect(width).toBeLessThanOrEqual(viewport.width)
+  })
+}
+
+test('ricarica le route principali senza errori console', async ({ page }) => {
+  const errors: string[] = []
+  page.on('console', (message) => {
+    if (message.type() === 'error') errors.push(message.text())
+  })
+  for (const route of [
+    'giochi',
+    'sessioni',
+    'progressi',
+    'profilo',
+    'impostazioni',
+    'giochi/hanoi',
+    'giochi/memory',
+    'giochi/stroop',
+  ]) {
+    await page.goto(`./${route}`)
+    await page.reload()
+    await expect(page.locator('h1')).toBeVisible()
+  }
+  expect(errors).toEqual([])
+})
