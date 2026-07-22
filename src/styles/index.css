@@ -767,11 +767,15 @@ td {
     position: static;
     height: auto;
     flex-direction: row;
+    flex-wrap: wrap;
     align-items: center;
     padding: 12px;
   }
   .sidebar nav {
     display: flex;
+    min-width: 0;
+    flex-wrap: wrap;
+    justify-content: flex-end;
     margin: 0 0 0 auto;
   }
   .version {
