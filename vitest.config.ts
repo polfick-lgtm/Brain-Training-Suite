@@ -16,6 +16,7 @@ export default defineConfig({
         'src/storage/trainingRepository.ts',
         'src/storage/validation.ts',
         'src/statistics/**/*.ts',
+        'src/features/**/*.ts',
       ],
       exclude: ['src/**/*.test.{ts,tsx}', 'src/**/*.tsx'],
       thresholds: {

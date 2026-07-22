@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { DifficultyLevel } from '../../core/games/types'
 import { useTrainingStore } from '../../storage/useTrainingStore'
+import { useSessionPlanStore } from '../../features/sessions/useSessionPlanStore'
 import {
   evaluateChoice,
   QuizGameDefinition,
@@ -14,6 +15,7 @@ type GameStatus = 'idle' | 'running' | 'paused' | 'completed'
 
 export function QuizGamePage({ definition }: Props) {
   const addSession = useTrainingStore((state) => state.addSession)
+  const completeSessionGame = useSessionPlanStore((state) => state.completeGame)
   const [difficulty, setDifficulty] = useState<DifficultyLevel>('easy')
   const [status, setStatus] = useState<GameStatus>('idle')
   const [roundIndex, setRoundIndex] = useState(0)
@@ -63,6 +65,7 @@ export function QuizGamePage({ definition }: Props) {
       completed: true,
       details: { rounds: totalRounds, correct: nextCorrect },
     })
+    completeSessionGame(definition.id)
     setFeedback(`Sessione completata. Punteggio ${score} su 100.`)
     setStatus('completed')
   }

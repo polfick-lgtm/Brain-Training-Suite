@@ -183,6 +183,24 @@ for (const [slug, title] of [
   })
 }
 
+test('crea una sessione per obiettivo e avanza dopo un gioco', async ({
+  page,
+}) => {
+  await page.goto('./sessioni')
+  await page.locator('.session-builder select').nth(0).selectOption('memory')
+  await page.locator('.session-builder select').nth(1).selectOption('10')
+  await page.getByRole('button', { name: 'Inizia sessione' }).click()
+  await page.getByRole('button', { name: 'Pausa sessione' }).click()
+  await expect(page.getByText('Sessione in pausa')).toBeVisible()
+  await page.getByRole('button', { name: 'Riprendi sessione' }).click()
+  await page.getByRole('link', { name: 'Apri gioco' }).click()
+  await page.getByRole('button', { name: 'Avvia' }).click()
+  for (let round = 0; round < 3; round += 1) await page.keyboard.press('2')
+  await page.getByRole('link', { name: 'Sessioni' }).click()
+  await expect(page.getByText('Completato').first()).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Apri gioco' })).toBeVisible()
+})
+
 test('resta utilizzabile su una viewport mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('./')

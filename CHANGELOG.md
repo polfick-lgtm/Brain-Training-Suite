@@ -22,6 +22,8 @@ Le modifiche rilevanti al progetto sono documentate in questo file secondo i pri
 - smoke test Playwright dedicato a tutte le dieci route di gioco.
 - filtri statistiche per periodo e gioco, aggregazioni locali e migliori risultati;
 - grafico accessibile con riepilogo tabellare equivalente e caricamento differito.
+- session builder da 3–5 esercizi per obiettivo e durata;
+- timer globale, pausa, interruzione sicura e avanzamento automatico tra giochi.
 
 ## [0.1.0] - 2026-07-22
 

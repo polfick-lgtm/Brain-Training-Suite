@@ -9,7 +9,7 @@
 | BTS-005 | Suite memoria                   | Completato |
 | BTS-006 | Suite attenzione                | Completato |
 | BTS-007 | Statistiche e progressi         | Completato |
-| BTS-008 | Session builder                 | Da fare    |
+| BTS-008 | Session builder                 | Completato |
 | BTS-009 | Coach locale                    | Da fare    |
 | BTS-010 | PWA offline e aggiornamenti     | Da fare    |
 | BTS-011 | Qualità ed E2E                  | Da fare    |

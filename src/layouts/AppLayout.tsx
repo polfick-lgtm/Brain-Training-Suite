@@ -10,6 +10,7 @@ import {
 import { NavLink, Outlet } from 'react-router-dom'
 import { RouteFocusManager } from '../app/RouteFocusManager'
 import { AppDataInitializer } from '../app/AppDataInitializer'
+import { SessionTimer } from '../app/SessionTimer'
 import { useTrainingStore } from '../storage/useTrainingStore'
 
 const items = [
@@ -31,6 +32,7 @@ export function AppLayout() {
       </a>
       <RouteFocusManager />
       <AppDataInitializer />
+      <SessionTimer />
       <aside className="sidebar">
         <NavLink to="/" className="brand">
           <Brain size={30} />

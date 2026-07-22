@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTrainingStore } from '../../storage/useTrainingStore'
+import { useSessionPlanStore } from '../../features/sessions/useSessionPlanStore'
 import { canMove, initialPegs, minimumMoves, moveDisk } from './hanoiEngine'
 
 function formatTime(seconds: number) {
@@ -12,6 +13,7 @@ export function HanoiPage() {
     (state) => state.profile.preferredLevel,
   )
   const addSession = useTrainingStore((s) => s.addSession)
+  const completeSessionGame = useSessionPlanStore((state) => state.completeGame)
   const [disks, setDisks] = useState(preferredLevel)
   const [pegs, setPegs] = useState(() => initialPegs(preferredLevel))
   const [selected, setSelected] = useState<number | null>(null)
@@ -44,10 +46,11 @@ export function HanoiPage() {
       completed: true,
       details: { disks, moves, minimumMoves: minimum },
     })
+    completeSessionGame('hanoi')
     window.alert(
       `Complimenti! Hai completato il gioco in ${moves} mosse e ${formatTime(seconds)}.`,
     )
-  }, [pegs, disks, moves, seconds, minimum, addSession])
+  }, [pegs, disks, moves, seconds, minimum, addSession, completeSessionGame])
 
   function reset(nextDisks = disks) {
     setDisks(nextDisks)

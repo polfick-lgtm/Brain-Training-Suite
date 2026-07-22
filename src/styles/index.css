@@ -653,6 +653,64 @@ td {
   border-bottom: 1px solid #dce6f0;
   text-align: left;
 }
+.session-builder {
+  display: grid;
+  max-width: 680px;
+  gap: 18px;
+}
+.session-builder label {
+  display: grid;
+  gap: 8px;
+  font-weight: 700;
+}
+.session-builder select {
+  padding: 12px;
+  border: 1px solid #bcccdc;
+  border-radius: 10px;
+  background: white;
+}
+.session-active {
+  display: grid;
+  gap: 18px;
+}
+.session-plan {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  list-style: none;
+  counter-reset: session-step;
+}
+.session-plan li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #dce6f0;
+  border-radius: 12px;
+  counter-increment: session-step;
+}
+.session-plan li::before {
+  content: counter(session-step);
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 50%;
+  background: #d9e8f5;
+  font-weight: 800;
+}
+.session-plan li span {
+  flex: 1;
+  font-weight: 700;
+}
+.session-plan li.current {
+  border-color: #2f80ed;
+  background: #eef6ff;
+}
+.session-plan li.done {
+  color: #166534;
+  background: #ecfdf3;
+}
 .fatal-error {
   padding: 28px;
 }
