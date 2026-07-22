@@ -3,7 +3,7 @@
 | Task    | Ambito                          | Stato      |
 | ------- | ------------------------------- | ---------- |
 | BTS-001 | Audit e bootstrap qualità       | Completato |
-| BTS-002 | Shell, routing e accessibilità  | Da fare    |
+| BTS-002 | Shell, routing e accessibilità  | Completato |
 | BTS-003 | Storage, profilo e impostazioni | Da fare    |
 | BTS-004 | Hanoi e Torre di Londra         | Da fare    |
 | BTS-005 | Suite memoria                   | Da fare    |

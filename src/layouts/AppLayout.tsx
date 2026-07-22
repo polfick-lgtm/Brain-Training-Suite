@@ -1,15 +1,31 @@
-import { Brain, ChartNoAxesCombined, Home, UserRound } from 'lucide-react'
+import {
+  Brain,
+  ChartNoAxesCombined,
+  Gamepad2,
+  Home,
+  ListChecks,
+  Settings,
+  UserRound,
+} from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
+import { RouteFocusManager } from '../app/RouteFocusManager'
 
 const items = [
   { to: '/', label: 'Home', icon: Home, end: true },
+  { to: '/giochi', label: 'Giochi', icon: Gamepad2 },
+  { to: '/sessioni', label: 'Sessioni', icon: ListChecks },
   { to: '/progressi', label: 'Progressi', icon: ChartNoAxesCombined },
   { to: '/profilo', label: 'Profilo', icon: UserRound },
+  { to: '/impostazioni', label: 'Impostazioni', icon: Settings },
 ]
 
 export function AppLayout() {
   return (
     <div className="app-shell">
+      <a className="skip-link" href="#contenuto-principale">
+        Vai al contenuto
+      </a>
+      <RouteFocusManager />
       <aside className="sidebar">
         <NavLink to="/" className="brand">
           <Brain size={30} />
@@ -34,7 +50,7 @@ export function AppLayout() {
         </nav>
         <div className="version">v0.1 Foundation</div>
       </aside>
-      <main className="content">
+      <main id="contenuto-principale" className="content" tabIndex={-1}>
         <Outlet />
       </main>
     </div>

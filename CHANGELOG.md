@@ -9,6 +9,9 @@ Le modifiche rilevanti al progetto sono documentate in questo file secondo i pri
 - audit v1.0 e tracciamento delle milestone BTS;
 - quality gate unificato con typecheck, copertura e verifica formato;
 - contratto TypeScript condiviso per giochi e risultati.
+- catalogo giochi e route per Sessioni e Impostazioni;
+- pagina 404, error boundary, skip link e gestione del focus tra route;
+- navigazione mobile completa e leggibile.
 
 ## [0.1.0] - 2026-07-22
 

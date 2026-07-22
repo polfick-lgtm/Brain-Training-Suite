@@ -3,8 +3,20 @@ import { expect, test } from '@playwright/test'
 test('naviga tra Home, Progressi, Profilo e Torre di Hanoi', async ({
   page,
 }) => {
+  const consoleErrors: string[] = []
+  page.on('console', (message) => {
+    if (message.type() === 'error') consoleErrors.push(message.text())
+  })
   await page.goto('./')
   await expect(page.getByRole('heading', { name: /Bentornato/i })).toBeVisible()
+
+  await page.getByRole('link', { name: 'Giochi' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Giochi', level: 1 }),
+  ).toBeVisible()
+
+  await page.getByRole('link', { name: 'Sessioni' }).click()
+  await expect(page.getByRole('heading', { name: 'Sessioni' })).toBeVisible()
 
   await page.getByRole('link', { name: 'Progressi' }).click()
   await expect(page.getByRole('heading', { name: 'Progressi' })).toBeVisible()
@@ -12,12 +24,28 @@ test('naviga tra Home, Progressi, Profilo e Torre di Hanoi', async ({
   await page.getByRole('link', { name: 'Profilo' }).click()
   await expect(page.getByRole('heading', { name: 'Profilo' })).toBeVisible()
 
+  await page.getByRole('link', { name: 'Impostazioni' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Impostazioni' }),
+  ).toBeVisible()
+
   await page.getByRole('link', { name: 'Home' }).click()
   await page.getByRole('link', { name: /Torre di Hanoi/ }).click()
   await expect(
     page.getByRole('heading', { name: 'Torre di Hanoi' }),
   ).toBeVisible()
   await expect(page.getByRole('button', { name: 'Piolo 1' })).toBeVisible()
+  expect(consoleErrors).toEqual([])
+})
+
+test('gestisce una route sconosciuta e il focus principale', async ({
+  page,
+}) => {
+  await page.goto('./pagina-inesistente')
+  await expect(
+    page.getByRole('heading', { name: 'Pagina non trovata' }),
+  ).toBeVisible()
+  await expect(page.locator('#contenuto-principale')).toBeFocused()
 })
 
 test('salva il profilo localmente e lo conserva dopo il reload', async ({
