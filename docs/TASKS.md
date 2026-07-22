@@ -6,8 +6,8 @@
 | BTS-002 | Shell, routing e accessibilità  | Completato |
 | BTS-003 | Storage, profilo e impostazioni | Completato |
 | BTS-004 | Hanoi e Torre di Londra         | Completato |
-| BTS-005 | Suite memoria                   | Da fare    |
-| BTS-006 | Suite attenzione                | Da fare    |
+| BTS-005 | Suite memoria                   | Completato |
+| BTS-006 | Suite attenzione                | Completato |
 | BTS-007 | Statistiche e progressi         | Da fare    |
 | BTS-008 | Session builder                 | Da fare    |
 | BTS-009 | Coach locale                    | Da fare    |

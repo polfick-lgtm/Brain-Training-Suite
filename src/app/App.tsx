@@ -9,6 +9,18 @@ import { SessionsPage } from '../pages/SessionsPage'
 import { SettingsPage } from '../pages/SettingsPage'
 import { HanoiPage } from '../games/hanoi/HanoiPage'
 import { TowerOfLondonPage } from '../games/tower-of-london/TowerOfLondonPage'
+import {
+  DigitSpanPage,
+  MemoryPage,
+  SimonPage,
+  VisualMemoryPage,
+} from '../games/memory-suite/MemorySuitePages'
+import {
+  NBackPage,
+  ReactionPage,
+  StroopPage,
+  TrailMakingPage,
+} from '../games/attention-suite/AttentionSuitePages'
 
 export function App() {
   return (
@@ -22,6 +34,14 @@ export function App() {
         <Route path="/impostazioni" element={<SettingsPage />} />
         <Route path="/giochi/hanoi" element={<HanoiPage />} />
         <Route path="/giochi/tower-of-london" element={<TowerOfLondonPage />} />
+        <Route path="/giochi/memory" element={<MemoryPage />} />
+        <Route path="/giochi/visual-memory" element={<VisualMemoryPage />} />
+        <Route path="/giochi/digit-span" element={<DigitSpanPage />} />
+        <Route path="/giochi/simon" element={<SimonPage />} />
+        <Route path="/giochi/stroop" element={<StroopPage />} />
+        <Route path="/giochi/trail-making" element={<TrailMakingPage />} />
+        <Route path="/giochi/reaction" element={<ReactionPage />} />
+        <Route path="/giochi/n-back" element={<NBackPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

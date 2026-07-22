@@ -17,6 +17,9 @@ Le modifiche rilevanti al progetto sono documentate in questo file secondo i pri
 - export, import validato e cancellazione completa con doppia conferma.
 - Torre di Londra giocabile con difficoltà, pausa, tastiera, punteggio e salvataggio;
 - runner condiviso per giochi a round con timer e risultati standardizzati.
+- Memory, Memoria visiva, Digit Span e Simon;
+- Stroop, Trail Making, Test di reazione e N-Back;
+- smoke test Playwright dedicato a tutte le dieci route di gioco.
 
 ## [0.1.0] - 2026-07-22
 

@@ -155,6 +155,26 @@ test('avvia, mette in pausa e completa Torre di Londra da tastiera', async ({
   ).toBeVisible()
 })
 
+for (const [slug, title] of [
+  ['memory', 'Memory'],
+  ['visual-memory', 'Memoria visiva'],
+  ['digit-span', 'Digit Span'],
+  ['simon', 'Simon'],
+  ['stroop', 'Stroop'],
+  ['trail-making', 'Trail Making'],
+  ['reaction', 'Test di reazione'],
+  ['n-back', 'N-Back'],
+] as const) {
+  test(`avvia il gioco ${title}`, async ({ page }) => {
+    await page.goto(`./giochi/${slug}`)
+    await expect(page.getByRole('heading', { name: title })).toBeVisible()
+    await page.getByRole('button', { name: 'Avvia' }).click()
+    await expect(page.locator('.choice-button').first()).toBeVisible()
+    await page.locator('.choice-button').first().click()
+    await expect(page.getByRole('status').last()).not.toBeEmpty()
+  })
+}
+
 test('resta utilizzabile su una viewport mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('./')
