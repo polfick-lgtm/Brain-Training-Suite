@@ -564,6 +564,54 @@ select:focus-visible,
   animation-duration: 0.01ms !important;
   animation-iteration-count: 1 !important;
 }
+.quiz-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.quiz-stats span {
+  padding: 12px;
+  border-radius: 12px;
+  color: white;
+  background: #102a43;
+  text-align: center;
+}
+.quiz-panel {
+  min-height: 310px;
+  display: grid;
+  align-content: center;
+  text-align: center;
+}
+.choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+.choice-button {
+  min-height: 70px;
+  padding: 14px;
+  border: 2px solid #9fb3c8;
+  border-radius: 14px;
+  color: #102a43;
+  background: #f5f9fc;
+  cursor: pointer;
+  font-weight: 800;
+}
+.choice-button:hover {
+  border-color: #2f80ed;
+  background: #eaf3ff;
+}
+.choice-button kbd {
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: #d9e8f5;
+}
+.result-card {
+  max-width: 520px;
+  margin: auto;
+}
 .fatal-error {
   padding: 28px;
 }
@@ -640,7 +688,8 @@ select:focus-visible,
   .game-grid,
   .catalog-grid,
   .settings-preview,
-  .settings-grid {
+  .settings-grid,
+  .choice-grid {
     grid-template-columns: 1fr;
   }
   .hanoi-board {

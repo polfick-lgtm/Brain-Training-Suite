@@ -141,6 +141,20 @@ test('completa una partita a tre dischi e registra la sessione', async ({
   await expect(page.getByText(/7 mosse/)).toBeVisible()
 })
 
+test('avvia, mette in pausa e completa Torre di Londra da tastiera', async ({
+  page,
+}) => {
+  await page.goto('./giochi/tower-of-london')
+  await page.getByRole('button', { name: 'Avvia' }).click()
+  await page.getByRole('button', { name: 'Pausa' }).click()
+  await expect(page.getByText('Sessione in pausa.')).toBeVisible()
+  await page.getByRole('button', { name: 'Riprendi' }).click()
+  for (let round = 0; round < 3; round += 1) await page.keyboard.press('2')
+  await expect(
+    page.getByRole('heading', { name: 'Risultato salvato' }),
+  ).toBeVisible()
+})
+
 test('resta utilizzabile su una viewport mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('./')

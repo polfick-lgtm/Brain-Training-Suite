@@ -4,7 +4,6 @@ export type GameStatus = 'available' | 'coming-soon'
 export type GameCatalogEntry = GameDefinition & { status: GameStatus }
 
 const upcoming: readonly [GameId, string, CognitiveCategory, number][] = [
-  ['tower-of-london', 'Torre di Londra', 'logic', 6],
   ['memory', 'Memory', 'memory', 5],
   ['visual-memory', 'Memoria visiva', 'memory', 4],
   ['digit-span', 'Digit Span', 'memory', 4],
@@ -25,6 +24,17 @@ export const gameCatalog: readonly GameCatalogEntry[] = [
     route: '/giochi/hanoi',
     difficulties: ['easy', 'medium', 'hard'],
     estimateMinutes: 5,
+    status: 'available',
+  },
+  {
+    id: 'tower-of-london',
+    title: 'Torre di Londra',
+    description:
+      'Pianifica mentalmente il percorso tra stato iniziale e obiettivo.',
+    category: 'logic',
+    route: '/giochi/tower-of-london',
+    difficulties: ['easy', 'medium', 'hard'],
+    estimateMinutes: 6,
     status: 'available',
   },
   ...upcoming.map(([id, title, category, estimateMinutes]) => ({

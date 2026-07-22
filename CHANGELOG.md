@@ -15,6 +15,8 @@ Le modifiche rilevanti al progetto sono documentate in questo file secondo i pri
 - persistenza IndexedDB con Dexie e migrazione automatica dei dati v0.1;
 - preferenze tema, dimensione testo, riduzione animazioni, suoni e coach;
 - export, import validato e cancellazione completa con doppia conferma.
+- Torre di Londra giocabile con difficoltà, pausa, tastiera, punteggio e salvataggio;
+- runner condiviso per giochi a round con timer e risultati standardizzati.
 
 ## [0.1.0] - 2026-07-22
 

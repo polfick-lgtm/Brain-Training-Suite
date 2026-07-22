@@ -5,7 +5,7 @@
 | BTS-001 | Audit e bootstrap qualità       | Completato |
 | BTS-002 | Shell, routing e accessibilità  | Completato |
 | BTS-003 | Storage, profilo e impostazioni | Completato |
-| BTS-004 | Hanoi e Torre di Londra         | Da fare    |
+| BTS-004 | Hanoi e Torre di Londra         | Completato |
 | BTS-005 | Suite memoria                   | Da fare    |
 | BTS-006 | Suite attenzione                | Da fare    |
 | BTS-007 | Statistiche e progressi         | Da fare    |

@@ -8,6 +8,7 @@ import { ProfilePage } from '../pages/ProfilePage'
 import { SessionsPage } from '../pages/SessionsPage'
 import { SettingsPage } from '../pages/SettingsPage'
 import { HanoiPage } from '../games/hanoi/HanoiPage'
+import { TowerOfLondonPage } from '../games/tower-of-london/TowerOfLondonPage'
 
 export function App() {
   return (
@@ -20,6 +21,7 @@ export function App() {
         <Route path="/profilo" element={<ProfilePage />} />
         <Route path="/impostazioni" element={<SettingsPage />} />
         <Route path="/giochi/hanoi" element={<HanoiPage />} />
+        <Route path="/giochi/tower-of-london" element={<TowerOfLondonPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
