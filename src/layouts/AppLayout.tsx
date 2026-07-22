@@ -57,7 +57,7 @@ export function AppLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="version">v0.1 Foundation</div>
+        <div className="version">v1.0 Genesis</div>
       </aside>
       <main id="contenuto-principale" className="content" tabIndex={-1}>
         {hydrated ? <Outlet /> : <p role="status">Caricamento dati locali…</p>}

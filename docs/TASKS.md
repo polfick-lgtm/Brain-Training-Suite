@@ -13,6 +13,6 @@
 | BTS-009 | Coach locale                    | Completato |
 | BTS-010 | PWA offline e aggiornamenti     | Completato |
 | BTS-011 | Qualità ed E2E                  | Completato |
-| BTS-012 | Release e deploy                | Da fare    |
+| BTS-012 | Release e deploy                | Completato |
 
 Lo stato passa a `Completato` solo dopo verifiche riproducibili e commit semantico dedicato.

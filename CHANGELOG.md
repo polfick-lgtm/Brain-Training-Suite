@@ -4,6 +4,8 @@ Le modifiche rilevanti al progetto sono documentate in questo file secondo i pri
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-07-23
+
 ### Aggiunto
 
 - audit v1.0 e tracciamento delle milestone BTS;

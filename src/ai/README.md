@@ -1,3 +1,3 @@
 # AI Coach
 
-Spazio riservato ai futuri moduli di raccomandazione, adattamento della difficoltà e generazione delle sessioni. In v0.1 non viene eseguita alcuna elaborazione AI e nessun dato lascia il dispositivo.
+Spazio riservato a eventuali moduli futuri. In v1.0 il coach usa esclusivamente regole deterministiche locali: non esegue elaborazione AI remota e nessun dato lascia il dispositivo.
