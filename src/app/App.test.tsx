@@ -4,28 +4,28 @@ import { describe, expect, it } from 'vitest'
 import { App } from './App'
 
 describe('routing applicazione', () => {
-  it('mostra il catalogo giochi', () => {
+  it('mostra il catalogo giochi', async () => {
     render(
       <MemoryRouter initialEntries={['/giochi']}>
         <App />
       </MemoryRouter>,
     )
     expect(
-      screen.getByRole('heading', { name: 'Giochi', level: 1 }),
+      await screen.findByRole('heading', { name: 'Giochi', level: 1 }),
     ).toBeInTheDocument()
     expect(
       screen.getByRole('link', { name: /Torre di Hanoi/ }),
     ).toHaveAttribute('href', '/giochi/hanoi')
   })
 
-  it('mostra una pagina 404 esplicita', () => {
+  it('mostra una pagina 404 esplicita', async () => {
     render(
       <MemoryRouter initialEntries={['/rotta-inesistente']}>
         <App />
       </MemoryRouter>,
     )
     expect(
-      screen.getByRole('heading', { name: 'Pagina non trovata' }),
+      await screen.findByRole('heading', { name: 'Pagina non trovata' }),
     ).toBeInTheDocument()
     expect(
       screen.getByRole('link', { name: 'Torna alla Home' }),

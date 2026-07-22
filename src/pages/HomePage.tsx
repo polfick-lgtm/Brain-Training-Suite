@@ -11,11 +11,15 @@ import { StatCard } from '../components/StatCard'
 import { useTrainingStore } from '../storage/useTrainingStore'
 
 export function HomePage() {
-  const { profileName, sessions } = useTrainingStore()
-  const totalSeconds = sessions.reduce((sum, s) => sum + s.seconds, 0)
+  const { profile, sessions } = useTrainingStore()
+  const totalSeconds = sessions.reduce(
+    (sum, session) => sum + session.durationSeconds,
+    0,
+  )
   const efficiency = sessions.length
     ? Math.round(
-        sessions.reduce((sum, s) => sum + s.efficiency, 0) / sessions.length,
+        sessions.reduce((sum, session) => sum + session.score, 0) /
+          sessions.length,
       )
     : null
   return (
@@ -23,7 +27,9 @@ export function HomePage() {
       <header className="page-header">
         <div>
           <p className="eyebrow">Allenamento cognitivo</p>
-          <h1>Bentornato{profileName ? `, ${profileName}` : ''}</h1>
+          <h1>
+            Bentornato{profile.displayName ? `, ${profile.displayName}` : ''}
+          </h1>
           <p>Ogni miglioramento inizia con un piccolo allenamento.</p>
         </div>
       </header>

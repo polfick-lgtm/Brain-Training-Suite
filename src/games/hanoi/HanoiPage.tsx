@@ -8,7 +8,9 @@ function formatTime(seconds: number) {
 }
 
 export function HanoiPage() {
-  const preferredLevel = useTrainingStore((s) => s.preferredLevel)
+  const preferredLevel = useTrainingStore(
+    (state) => state.profile.preferredLevel,
+  )
   const addSession = useTrainingStore((s) => s.addSession)
   const [disks, setDisks] = useState(preferredLevel)
   const [pegs, setPegs] = useState(() => initialPegs(preferredLevel))
@@ -31,13 +33,16 @@ export function HanoiPage() {
     const efficiency = Math.round((minimum / Math.max(moves, minimum)) * 100)
     addSession({
       id: crypto.randomUUID(),
-      game: 'hanoi',
+      gameId: 'hanoi',
+      difficulty: disks <= 4 ? 'easy' : disks <= 6 ? 'medium' : 'hard',
+      startedAt: new Date(Date.now() - seconds * 1000).toISOString(),
       completedAt: new Date().toISOString(),
-      disks,
-      moves,
-      seconds,
-      minimumMoves: minimum,
-      efficiency,
+      durationSeconds: seconds,
+      score: efficiency,
+      accuracy: 100,
+      errors: Math.max(0, moves - minimum),
+      completed: true,
+      details: { disks, moves, minimumMoves: minimum },
     })
     window.alert(
       `Complimenti! Hai completato il gioco in ${moves} mosse e ${formatTime(seconds)}.`,

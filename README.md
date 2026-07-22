@@ -6,7 +6,8 @@ Brain Training Suite è una PWA mobile-first per esercizi cognitivi semplici e m
 
 - navigazione responsive tra Home, Progressi, Profilo e giochi;
 - Torre di Hanoi da 3 a 10 dischi;
-- profilo e sessioni conservati nel browser tramite Zustand;
+- profilo, preferenze e sessioni conservati in IndexedDB tramite Dexie;
+- esportazione JSON, importazione validata e cancellazione completa dei dati;
 - installazione PWA e funzionamento offline dopo la prima visita;
 - nessun account, tracciamento, annuncio o invio di dati personali;
 - test unitari con Vitest e smoke test con Playwright.

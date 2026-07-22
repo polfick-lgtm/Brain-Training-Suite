@@ -9,6 +9,8 @@ import {
 } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { RouteFocusManager } from '../app/RouteFocusManager'
+import { AppDataInitializer } from '../app/AppDataInitializer'
+import { useTrainingStore } from '../storage/useTrainingStore'
 
 const items = [
   { to: '/', label: 'Home', icon: Home, end: true },
@@ -20,12 +22,15 @@ const items = [
 ]
 
 export function AppLayout() {
+  const hydrated = useTrainingStore((state) => state.hydrated)
+
   return (
     <div className="app-shell">
       <a className="skip-link" href="#contenuto-principale">
         Vai al contenuto
       </a>
       <RouteFocusManager />
+      <AppDataInitializer />
       <aside className="sidebar">
         <NavLink to="/" className="brand">
           <Brain size={30} />
@@ -51,7 +56,7 @@ export function AppLayout() {
         <div className="version">v0.1 Foundation</div>
       </aside>
       <main id="contenuto-principale" className="content" tabIndex={-1}>
-        <Outlet />
+        {hydrated ? <Outlet /> : <p role="status">Caricamento dati locali…</p>}
       </main>
     </div>
   )

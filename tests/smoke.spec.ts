@@ -62,6 +62,60 @@ test('salva il profilo localmente e lo conserva dopo il reload', async ({
   await expect(page.getByLabel('Livello iniziale consigliato')).toHaveValue('3')
 })
 
+test('importa, esporta e cancella i dati locali con conferma', async ({
+  page,
+}) => {
+  const now = new Date().toISOString()
+  await page.goto('./impostazioni')
+  await page.locator('input[type="file"]').setInputFiles({
+    name: 'brain-training-suite-test.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(
+      JSON.stringify({
+        format: 'brain-training-suite',
+        schemaVersion: 1,
+        exportedAt: now,
+        profile: {
+          id: 'local',
+          displayName: 'Profilo importato',
+          preferredLevel: 4,
+          goal: 'memory',
+          updatedAt: now,
+        },
+        settings: {
+          id: 'app',
+          theme: 'dark',
+          textScale: 'large',
+          reduceMotion: true,
+          sounds: false,
+          coachEnabled: false,
+          updatedAt: now,
+        },
+        sessions: [],
+      }),
+    ),
+  })
+  await expect(page.getByRole('status')).toContainText(
+    'Importazione completata',
+  )
+  await expect(page.getByLabel('Tema')).toHaveValue('dark')
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Esporta JSON' }).click()
+  const download = await downloadPromise
+  expect(download.suggestedFilename()).toMatch(
+    /^brain-training-suite-.*\.json$/,
+  )
+
+  await page.getByRole('button', { name: 'Cancella tutti i dati' }).click()
+  await page
+    .getByRole('button', { name: 'Conferma cancellazione completa' })
+    .click()
+  await expect(page.getByRole('status')).toContainText('Tutti i dati locali')
+  await page.getByRole('link', { name: 'Profilo' }).click()
+  await expect(page.getByLabel('Nome visualizzato')).toHaveValue('')
+})
+
 test('completa una partita a tre dischi e registra la sessione', async ({
   page,
 }) => {

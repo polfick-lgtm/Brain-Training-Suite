@@ -4,12 +4,13 @@ import { useTrainingStore } from '../storage/useTrainingStore'
 
 export function ProfilePage() {
   const store = useTrainingStore()
-  const [name, setName] = useState(store.profileName)
-  const [level, setLevel] = useState(store.preferredLevel)
+  const [name, setName] = useState(store.profile.displayName)
+  const [level, setLevel] = useState(store.profile.preferredLevel)
+  const [goal, setGoal] = useState(store.profile.goal)
   const [saved, setSaved] = useState(false)
   function submit(e: FormEvent) {
     e.preventDefault()
-    store.setProfile(name.trim(), level)
+    store.setProfile(name.trim(), level, goal)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
@@ -33,6 +34,19 @@ export function ProfilePage() {
             maxLength={30}
             placeholder="Inserisci il tuo nome"
           />
+        </label>
+        <label>
+          Obiettivo preferito
+          <select
+            value={goal}
+            onChange={(event) => setGoal(event.target.value as typeof goal)}
+          >
+            <option value="balanced">Equilibrato</option>
+            <option value="memory">Memoria</option>
+            <option value="attention">Attenzione</option>
+            <option value="logic">Logica</option>
+            <option value="speed">Velocità</option>
+          </select>
         </label>
         <label>
           Livello iniziale consigliato

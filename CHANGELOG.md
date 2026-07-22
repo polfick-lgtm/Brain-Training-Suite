@@ -12,6 +12,9 @@ Le modifiche rilevanti al progetto sono documentate in questo file secondo i pri
 - catalogo giochi e route per Sessioni e Impostazioni;
 - pagina 404, error boundary, skip link e gestione del focus tra route;
 - navigazione mobile completa e leggibile.
+- persistenza IndexedDB con Dexie e migrazione automatica dei dati v0.1;
+- preferenze tema, dimensione testo, riduzione animazioni, suoni e coach;
+- export, import validato e cancellazione completa con doppia conferma.
 
 ## [0.1.0] - 2026-07-22
 

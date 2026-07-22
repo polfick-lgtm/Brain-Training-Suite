@@ -8,7 +8,14 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json-summary'],
-      include: ['src/core/**/*.ts', 'src/games/**/*.ts'],
+      include: [
+        'src/core/**/*.ts',
+        'src/games/**/*.ts',
+        'src/storage/database.ts',
+        'src/storage/models.ts',
+        'src/storage/trainingRepository.ts',
+        'src/storage/validation.ts',
+      ],
       exclude: ['src/**/*.test.{ts,tsx}', 'src/**/*.tsx'],
       thresholds: {
         lines: 80,
