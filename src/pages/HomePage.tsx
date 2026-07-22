@@ -9,6 +9,7 @@ import {
 import { Link } from 'react-router-dom'
 import { StatCard } from '../components/StatCard'
 import { useTrainingStore } from '../storage/useTrainingStore'
+import { CoachPanel } from '../features/coach/CoachPanel'
 
 export function HomePage() {
   const { profile, sessions } = useTrainingStore()
@@ -109,6 +110,7 @@ export function HomePage() {
           </div>
         </div>
       </section>
+      <CoachPanel />
     </>
   )
 }

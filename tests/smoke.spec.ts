@@ -201,6 +201,19 @@ test('crea una sessione per obiettivo e avanza dopo un gioco', async ({
   await expect(page.getByRole('link', { name: 'Apri gioco' })).toBeVisible()
 })
 
+test('mostra e disattiva il coach locale', async ({ page }) => {
+  await page.goto('./')
+  await expect(
+    page.getByRole('heading', { name: /Tre idee trasparenti/ }),
+  ).toBeVisible()
+  await page.getByRole('link', { name: 'Impostazioni' }).click()
+  await page.getByLabel('Suggerimenti del coach locale').uncheck()
+  await page.getByRole('link', { name: 'Home' }).click()
+  await expect(
+    page.getByRole('heading', { name: /Tre idee trasparenti/ }),
+  ).toHaveCount(0)
+})
+
 test('resta utilizzabile su una viewport mobile', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('./')

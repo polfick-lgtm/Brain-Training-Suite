@@ -24,6 +24,7 @@ Le modifiche rilevanti al progetto sono documentate in questo file secondo i pri
 - grafico accessibile con riepilogo tabellare equivalente e caricamento differito.
 - session builder da 3–5 esercizi per obiettivo e durata;
 - timer globale, pausa, interruzione sicura e avanzamento automatico tra giochi.
+- coach locale deterministico con massimo tre suggerimenti motivati e disattivabili.
 
 ## [0.1.0] - 2026-07-22
 
