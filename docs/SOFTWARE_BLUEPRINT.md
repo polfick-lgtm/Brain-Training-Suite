@@ -18,7 +18,7 @@ Aiutare le persone ad allenare capacità cognitive tramite esercizi semplici, mi
 1. **Single-page application statica.** Vite produce file distribuibili senza server applicativo; il router usa la base `/Brain-Training-Suite/` richiesta da GitHub Pages.
 2. **Dati locali per impostazione predefinita.** Profilo, preferenze e sessioni restano in IndexedDB sul dispositivo. Non sono presenti analytics, pubblicità o API remote. I dati v0.1 in `localStorage` vengono migrati una volta e poi rimossi.
 3. **Logica di gioco separata.** Le regole della Torre di Hanoi sono funzioni pure coperte da test Vitest.
-4. **Progressive Web App.** Il service worker viene aggiornato automaticamente; manifest, scope e start URL rispettano il sottopercorso GitHub Pages.
+4. **Progressive Web App.** Il service worker segnala quando l'app è pronta offline o quando è disponibile un aggiornamento; manifest, scope e start URL rispettano il sottopercorso GitHub Pages. Un fallback `404.html` ripristina le route profonde sull'hosting statico.
 5. **Quality gate prima del deploy.** GitHub Actions pubblica solo dopo installazione riproducibile, lint, test e build riusciti.
 
 ## Protezione dei dati

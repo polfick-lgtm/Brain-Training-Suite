@@ -11,6 +11,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { RouteFocusManager } from '../app/RouteFocusManager'
 import { AppDataInitializer } from '../app/AppDataInitializer'
 import { SessionTimer } from '../app/SessionTimer'
+import { PwaUpdatePrompt } from '../app/PwaUpdatePrompt'
 import { useTrainingStore } from '../storage/useTrainingStore'
 
 const items = [
@@ -33,6 +34,7 @@ export function AppLayout() {
       <RouteFocusManager />
       <AppDataInitializer />
       <SessionTimer />
+      <PwaUpdatePrompt />
       <aside className="sidebar">
         <NavLink to="/" className="brand">
           <Brain size={30} />

@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <title>Brain Training Suite</title>
+    <script>
+      const base = '/Brain-Training-Suite/'
+      const route = window.location.pathname.startsWith(base)
+        ? window.location.pathname.slice(base.length - 1)
+        : '/'
+      window.location.replace(
+        `${base}?p=${encodeURIComponent(route + window.location.search + window.location.hash)}`,
+      )
+    </script>
+  </head>
+  <body></body>
+</html>

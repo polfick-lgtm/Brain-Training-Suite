@@ -11,7 +11,7 @@
 | BTS-007 | Statistiche e progressi         | Completato |
 | BTS-008 | Session builder                 | Completato |
 | BTS-009 | Coach locale                    | Completato |
-| BTS-010 | PWA offline e aggiornamenti     | Da fare    |
+| BTS-010 | PWA offline e aggiornamenti     | Completato |
 | BTS-011 | Qualità ed E2E                  | Da fare    |
 | BTS-012 | Release e deploy                | Da fare    |
 

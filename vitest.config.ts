@@ -1,6 +1,14 @@
 import { defineConfig } from 'vitest/config'
+import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      'virtual:pwa-register/react': fileURLToPath(
+        new URL('./src/test/pwaRegisterMock.ts', import.meta.url),
+      ),
+    },
+  },
   test: {
     include: ['src/**/*.test.{ts,tsx}'],
     environment: 'jsdom',

@@ -35,6 +35,7 @@ npm run test:coverage
 npm run build
 npx playwright install chromium
 npm run test:e2e
+npm run test:pwa
 ```
 
 Il comando `npm run verify` esegue in sequenza formato, lint, typecheck e test con copertura.

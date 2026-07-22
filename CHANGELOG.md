@@ -25,6 +25,9 @@ Le modifiche rilevanti al progetto sono documentate in questo file secondo i pri
 - session builder da 3–5 esercizi per obiettivo e durata;
 - timer globale, pausa, interruzione sicura e avanzamento automatico tra giochi.
 - coach locale deterministico con massimo tre suggerimenti motivati e disattivabili.
+- prompt PWA per disponibilità offline e aggiornamenti;
+- fallback GitHub Pages per refresh diretto delle route profonde;
+- test Playwright della build installata e riaperta senza rete.
 
 ## [0.1.0] - 2026-07-22
 
