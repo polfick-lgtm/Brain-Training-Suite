@@ -137,8 +137,16 @@ test('completa una partita a tre dischi e registra la sessione', async ({
   }
 
   await page.getByRole('link', { name: 'Progressi' }).click()
-  await expect(page.getByText('Torre di Hanoi · 3 dischi')).toBeVisible()
-  await expect(page.getByText(/7 mosse/)).toBeVisible()
+  await expect(page.getByRole('row', { name: /Torre di Hanoi/ })).toBeVisible()
+  await expect(
+    page.getByRole('img', { name: /punteggio medio/i }),
+  ).toBeVisible()
+  await page.getByLabel('Periodo').selectOption('all')
+  await page
+    .locator('.filters label')
+    .filter({ hasText: 'Gioco' })
+    .locator('select')
+    .selectOption('hanoi')
 })
 
 test('avvia, mette in pausa e completa Torre di Londra da tastiera', async ({

@@ -20,6 +20,8 @@ Le modifiche rilevanti al progetto sono documentate in questo file secondo i pri
 - Memory, Memoria visiva, Digit Span e Simon;
 - Stroop, Trail Making, Test di reazione e N-Back;
 - smoke test Playwright dedicato a tutte le dieci route di gioco.
+- filtri statistiche per periodo e gioco, aggregazioni locali e migliori risultati;
+- grafico accessibile con riepilogo tabellare equivalente e caricamento differito.
 
 ## [0.1.0] - 2026-07-22
 

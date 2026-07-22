@@ -1,9 +1,9 @@
+import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { AppLayout } from '../layouts/AppLayout'
 import { GamesPage } from '../pages/GamesPage'
 import { HomePage } from '../pages/HomePage'
 import { NotFoundPage } from '../pages/NotFoundPage'
-import { ProgressPage } from '../pages/ProgressPage'
 import { ProfilePage } from '../pages/ProfilePage'
 import { SessionsPage } from '../pages/SessionsPage'
 import { SettingsPage } from '../pages/SettingsPage'
@@ -22,6 +22,12 @@ import {
   TrailMakingPage,
 } from '../games/attention-suite/AttentionSuitePages'
 
+const ProgressPage = lazy(() =>
+  import('../pages/ProgressPage').then((module) => ({
+    default: module.ProgressPage,
+  })),
+)
+
 export function App() {
   return (
     <Routes>
@@ -29,7 +35,14 @@ export function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/giochi" element={<GamesPage />} />
         <Route path="/sessioni" element={<SessionsPage />} />
-        <Route path="/progressi" element={<ProgressPage />} />
+        <Route
+          path="/progressi"
+          element={
+            <Suspense fallback={<p role="status">Caricamento progressi…</p>}>
+              <ProgressPage />
+            </Suspense>
+          }
+        />
         <Route path="/profilo" element={<ProfilePage />} />
         <Route path="/impostazioni" element={<SettingsPage />} />
         <Route path="/giochi/hanoi" element={<HanoiPage />} />

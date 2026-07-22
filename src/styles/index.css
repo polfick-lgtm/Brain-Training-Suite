@@ -612,6 +612,47 @@ select:focus-visible,
   max-width: 520px;
   margin: auto;
 }
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.filters label {
+  display: grid;
+  gap: 6px;
+  min-width: 190px;
+  font-weight: 700;
+}
+.filters select {
+  padding: 10px;
+  border: 1px solid #bcccdc;
+  border-radius: 10px;
+  background: white;
+}
+.progress-chart {
+  width: 100%;
+  margin-top: 16px;
+}
+.table-scroll {
+  overflow-x: auto;
+}
+table {
+  width: 100%;
+  margin-top: 20px;
+  border-collapse: collapse;
+}
+caption {
+  padding: 10px;
+  text-align: left;
+  font-weight: 700;
+}
+th,
+td {
+  padding: 10px;
+  border-bottom: 1px solid #dce6f0;
+  text-align: left;
+}
 .fatal-error {
   padding: 28px;
 }
