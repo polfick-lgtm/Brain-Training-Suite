@@ -28,11 +28,15 @@ Vite mostra nel terminale l'indirizzo locale. In sviluppo l'app è servita sotto
 
 ```bash
 npm run lint
+npm run typecheck
 npm run test
+npm run test:coverage
 npm run build
 npx playwright install chromium
 npm run test:e2e
 ```
+
+Il comando `npm run verify` esegue in sequenza formato, lint, typecheck e test con copertura.
 
 ## Pubblicazione
 

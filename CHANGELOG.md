@@ -4,6 +4,12 @@ Le modifiche rilevanti al progetto sono documentate in questo file secondo i pri
 
 ## [Unreleased]
 
+### Aggiunto
+
+- audit v1.0 e tracciamento delle milestone BTS;
+- quality gate unificato con typecheck, copertura e verifica formato;
+- contratto TypeScript condiviso per giochi e risultati.
+
 ## [0.1.0] - 2026-07-22
 
 ### Aggiunto
