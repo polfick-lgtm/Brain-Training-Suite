@@ -33,6 +33,11 @@ Le modifiche rilevanti al progetto sono documentate in questo file secondo i pri
 - matrice E2E estesa a giochi, persistenza, sessioni, coach, route dirette e viewport mobile/tablet;
 - controlli CI completi per unit test, copertura, build, browser e comportamento PWA offline.
 
+### Corretto
+
+- Home allineata al catalogo v1.0 con dieci giochi disponibili e schede realmente giocabili;
+- pausa e ripresa aggiunte alla Torre di Hanoi, inclusa la sospensione del timer e delle mosse.
+
 ## [0.1.0] - 2026-07-22
 
 ### Aggiunto

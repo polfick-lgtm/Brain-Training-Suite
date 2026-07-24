@@ -13,6 +13,10 @@ La prima versione completa riunisce dieci giochi, sessioni guidate, statistiche 
 - prova PWA installata e riaperta offline;
 - audit delle dipendenze npm.
 
+La verifica manuale copre inoltre tutti i percorsi, i controlli di gioco,
+profilo, preferenze, esportazione/importazione, cancellazione dati, Session
+Builder, filtri statistiche e viewport da 320 px a tablet.
+
 ## Aggiornamento da v0.1
 
 I dati compatibili presenti nel vecchio storage locale vengono migrati automaticamente in IndexedDB. Prima dell'aggiornamento è comunque possibile esportare una copia JSON dalle Impostazioni.

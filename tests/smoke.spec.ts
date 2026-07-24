@@ -121,6 +121,10 @@ test('completa una partita a tre dischi e registra la sessione', async ({
 }) => {
   await page.goto('./giochi/hanoi')
   await page.getByLabel('Dischi').selectOption('3')
+  await page.getByRole('button', { name: 'Piolo 1' }).click()
+  await page.getByRole('button', { name: 'Pausa' }).click()
+  await expect(page.getByText('Partita in pausa.')).toBeVisible()
+  await page.getByRole('button', { name: 'Riprendi' }).click()
 
   page.once('dialog', (dialog) => dialog.accept())
   for (const [from, to] of [
