@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTrainingStore } from '../../storage/useTrainingStore'
+import { useSessionPlanStore } from '../../features/sessions/useSessionPlanStore'
 import { canMove, initialPegs, minimumMoves, moveDisk } from './hanoiEngine'
 
 function formatTime(seconds: number) {
@@ -8,41 +9,50 @@ function formatTime(seconds: number) {
 }
 
 export function HanoiPage() {
-  const preferredLevel = useTrainingStore((s) => s.preferredLevel)
+  const preferredLevel = useTrainingStore(
+    (state) => state.profile.preferredLevel,
+  )
   const addSession = useTrainingStore((s) => s.addSession)
+  const completeSessionGame = useSessionPlanStore((state) => state.completeGame)
   const [disks, setDisks] = useState(preferredLevel)
   const [pegs, setPegs] = useState(() => initialPegs(preferredLevel))
   const [selected, setSelected] = useState<number | null>(null)
   const [moves, setMoves] = useState(0)
   const [seconds, setSeconds] = useState(0)
   const [started, setStarted] = useState(false)
+  const [paused, setPaused] = useState(false)
   const completedRef = useRef(false)
   const minimum = useMemo(() => minimumMoves(disks), [disks])
 
   useEffect(() => {
-    if (!started) return
+    if (!started || paused) return
     const id = window.setInterval(() => setSeconds((s) => s + 1), 1000)
     return () => clearInterval(id)
-  }, [started])
+  }, [started, paused])
   useEffect(() => {
     if (pegs[2].length !== disks || completedRef.current) return
     completedRef.current = true
     setStarted(false)
+    setPaused(false)
     const efficiency = Math.round((minimum / Math.max(moves, minimum)) * 100)
     addSession({
       id: crypto.randomUUID(),
-      game: 'hanoi',
+      gameId: 'hanoi',
+      difficulty: disks <= 4 ? 'easy' : disks <= 6 ? 'medium' : 'hard',
+      startedAt: new Date(Date.now() - seconds * 1000).toISOString(),
       completedAt: new Date().toISOString(),
-      disks,
-      moves,
-      seconds,
-      minimumMoves: minimum,
-      efficiency,
+      durationSeconds: seconds,
+      score: efficiency,
+      accuracy: 100,
+      errors: Math.max(0, moves - minimum),
+      completed: true,
+      details: { disks, moves, minimumMoves: minimum },
     })
+    completeSessionGame('hanoi')
     window.alert(
       `Complimenti! Hai completato il gioco in ${moves} mosse e ${formatTime(seconds)}.`,
     )
-  }, [pegs, disks, moves, seconds, minimum, addSession])
+  }, [pegs, disks, moves, seconds, minimum, addSession, completeSessionGame])
 
   function reset(nextDisks = disks) {
     setDisks(nextDisks)
@@ -51,10 +61,11 @@ export function HanoiPage() {
     setMoves(0)
     setSeconds(0)
     setStarted(false)
+    setPaused(false)
     completedRef.current = false
   }
   function clickPeg(index: number) {
-    if (completedRef.current) return
+    if (completedRef.current || paused) return
     if (!started) setStarted(true)
     if (selected === null) {
       if (pegs[index].length) setSelected(index)
@@ -95,6 +106,17 @@ export function HanoiPage() {
         <button className="button primary" onClick={() => reset()}>
           Nuova partita
         </button>
+        {started && (
+          <button
+            className="button ghost"
+            onClick={() => {
+              setPaused((value) => !value)
+              setSelected(null)
+            }}
+          >
+            {paused ? 'Riprendi' : 'Pausa'}
+          </button>
+        )}
       </section>
       <section className="hanoi-stats">
         <div>
@@ -133,7 +155,9 @@ export function HanoiPage() {
         ))}
       </section>
       <p className="game-help">
-        Tocca prima il piolo di partenza e poi quello di destinazione.
+        {paused
+          ? 'Partita in pausa.'
+          : 'Tocca prima il piolo di partenza e poi quello di destinazione.'}
       </p>
     </>
   )

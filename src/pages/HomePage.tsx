@@ -1,21 +1,22 @@
-import {
-  ArrowRight,
-  Brain,
-  LockKeyhole,
-  Puzzle,
-  Target,
-  Zap,
-} from 'lucide-react'
+import { ArrowRight, Brain, Gamepad2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { StatCard } from '../components/StatCard'
+import { gameCatalog } from '../core/games/catalog'
 import { useTrainingStore } from '../storage/useTrainingStore'
+import { CoachPanel } from '../features/coach/CoachPanel'
+
+const featuredGames = gameCatalog.slice(0, 4)
 
 export function HomePage() {
-  const { profileName, sessions } = useTrainingStore()
-  const totalSeconds = sessions.reduce((sum, s) => sum + s.seconds, 0)
+  const { profile, sessions } = useTrainingStore()
+  const totalSeconds = sessions.reduce(
+    (sum, session) => sum + session.durationSeconds,
+    0,
+  )
   const efficiency = sessions.length
     ? Math.round(
-        sessions.reduce((sum, s) => sum + s.efficiency, 0) / sessions.length,
+        sessions.reduce((sum, session) => sum + session.score, 0) /
+          sessions.length,
       )
     : null
   return (
@@ -23,7 +24,9 @@ export function HomePage() {
       <header className="page-header">
         <div>
           <p className="eyebrow">Allenamento cognitivo</p>
-          <h1>Bentornato{profileName ? `, ${profileName}` : ''}</h1>
+          <h1>
+            Bentornato{profile.displayName ? `, ${profile.displayName}` : ''}
+          </h1>
           <p>Ogni miglioramento inizia con un piccolo allenamento.</p>
         </div>
       </header>
@@ -61,48 +64,27 @@ export function HomePage() {
         />
         <StatCard
           label="Giochi disponibili"
-          value="1"
-          detail="nuovi moduli in arrivo"
+          value={gameCatalog.length}
+          detail="esercizi pronti"
         />
       </section>
       <section className="section-block">
         <p className="eyebrow">Esercizi</p>
         <h2>Scegli il tuo allenamento</h2>
         <div className="game-grid">
-          <Link className="game-card available" to="/giochi/hanoi">
-            <Target />
-            <span>
-              <strong>Torre di Hanoi</strong>
-              <small>Logica e pianificazione</small>
-            </span>
-            <ArrowRight />
-          </Link>
-          <div className="game-card locked">
-            <Puzzle />
-            <span>
-              <strong>Torre di Londra</strong>
-              <small>Pianificazione sequenziale</small>
-            </span>
-            <LockKeyhole />
-          </div>
-          <div className="game-card locked">
-            <Brain />
-            <span>
-              <strong>Memoria visiva</strong>
-              <small>Ricordo di forme e posizioni</small>
-            </span>
-            <LockKeyhole />
-          </div>
-          <div className="game-card locked">
-            <Zap />
-            <span>
-              <strong>Tempi di reazione</strong>
-              <small>Rapidità e precisione</small>
-            </span>
-            <LockKeyhole />
-          </div>
+          {featuredGames.map((game) => (
+            <Link className="game-card available" to={game.route} key={game.id}>
+              <Gamepad2 aria-hidden="true" />
+              <span>
+                <strong>{game.title}</strong>
+                <small>{game.description}</small>
+              </span>
+              <ArrowRight aria-hidden="true" />
+            </Link>
+          ))}
         </div>
       </section>
+      <CoachPanel />
     </>
   )
 }

@@ -4,6 +4,40 @@ Le modifiche rilevanti al progetto sono documentate in questo file secondo i pri
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-07-23
+
+### Aggiunto
+
+- audit v1.0 e tracciamento delle milestone BTS;
+- quality gate unificato con typecheck, copertura e verifica formato;
+- contratto TypeScript condiviso per giochi e risultati.
+- catalogo giochi e route per Sessioni e Impostazioni;
+- pagina 404, error boundary, skip link e gestione del focus tra route;
+- navigazione mobile completa e leggibile.
+- persistenza IndexedDB con Dexie e migrazione automatica dei dati v0.1;
+- preferenze tema, dimensione testo, riduzione animazioni, suoni e coach;
+- export, import validato e cancellazione completa con doppia conferma.
+- Torre di Londra giocabile con difficoltà, pausa, tastiera, punteggio e salvataggio;
+- runner condiviso per giochi a round con timer e risultati standardizzati.
+- Memory, Memoria visiva, Digit Span e Simon;
+- Stroop, Trail Making, Test di reazione e N-Back;
+- smoke test Playwright dedicato a tutte le dieci route di gioco.
+- filtri statistiche per periodo e gioco, aggregazioni locali e migliori risultati;
+- grafico accessibile con riepilogo tabellare equivalente e caricamento differito.
+- session builder da 3–5 esercizi per obiettivo e durata;
+- timer globale, pausa, interruzione sicura e avanzamento automatico tra giochi.
+- coach locale deterministico con massimo tre suggerimenti motivati e disattivabili.
+- prompt PWA per disponibilità offline e aggiornamenti;
+- fallback GitHub Pages per refresh diretto delle route profonde;
+- test Playwright della build installata e riaperta senza rete.
+- matrice E2E estesa a giochi, persistenza, sessioni, coach, route dirette e viewport mobile/tablet;
+- controlli CI completi per unit test, copertura, build, browser e comportamento PWA offline.
+
+### Corretto
+
+- Home allineata al catalogo v1.0 con dieci giochi disponibili e schede realmente giocabili;
+- pausa e ripresa aggiunte alla Torre di Hanoi, inclusa la sospensione del timer e delle mosse.
+
 ## [0.1.0] - 2026-07-22
 
 ### Aggiunto
