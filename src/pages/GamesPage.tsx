@@ -22,45 +22,56 @@ export function GamesPage() {
           </p>
         </div>
       </header>
-      <section className="catalog-grid" aria-label="Catalogo giochi">
-        {gameCatalog.map((game) => {
-          const content = (
-            <>
-              <span className="catalog-category">
-                {categoryNames[game.category]}
-              </span>
-              <h2>{game.title}</h2>
-              <p>{game.description}</p>
-              <small>
-                <Clock3 size={15} aria-hidden="true" /> Circa{' '}
-                {game.estimateMinutes} min
-              </small>
-              {game.status === 'coming-soon' && (
-                <span className="coming-soon">
-                  <LockKeyhole size={15} aria-hidden="true" /> In arrivo
-                </span>
-              )}
-            </>
-          )
-          return game.status === 'available' ? (
-            <Link
-              className="catalog-card available"
-              to={game.route}
-              key={game.id}
-            >
-              {content}
-            </Link>
-          ) : (
-            <article
-              className="catalog-card"
-              key={game.id}
-              aria-disabled="true"
-            >
-              {content}
-            </article>
-          )
-        })}
-      </section>
+      {(['training', 'arcade'] as const).map((mode) => (
+        <section
+          key={mode}
+          className="section-block"
+          aria-label={mode === 'arcade' ? 'Arcade' : 'Allenamento'}
+        >
+          <h2>{mode === 'arcade' ? 'Arcade · sala giochi' : 'Allenamento'}</h2>
+          <div className="catalog-grid">
+            {gameCatalog
+              .filter((game) => (game.mode ?? 'training') === mode)
+              .map((game) => {
+                const content = (
+                  <>
+                    <span className="catalog-category">
+                      {categoryNames[game.category]}
+                    </span>
+                    <h2>{game.title}</h2>
+                    <p>{game.description}</p>
+                    <small>
+                      <Clock3 size={15} aria-hidden="true" /> Circa{' '}
+                      {game.estimateMinutes} min
+                    </small>
+                    {game.status === 'coming-soon' && (
+                      <span className="coming-soon">
+                        <LockKeyhole size={15} aria-hidden="true" /> In arrivo
+                      </span>
+                    )}
+                  </>
+                )
+                return game.status === 'available' ? (
+                  <Link
+                    className="catalog-card available"
+                    to={game.route}
+                    key={game.id}
+                  >
+                    {content}
+                  </Link>
+                ) : (
+                  <article
+                    className="catalog-card"
+                    key={game.id}
+                    aria-disabled="true"
+                  >
+                    {content}
+                  </article>
+                )
+              })}
+          </div>
+        </section>
+      ))}
     </>
   )
 }

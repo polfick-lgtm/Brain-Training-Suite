@@ -11,7 +11,7 @@ describe('routing applicazione', () => {
       </MemoryRouter>,
     )
     const availableGames = await screen.findByText('Giochi disponibili')
-    expect(availableGames.closest('article')).toHaveTextContent('10')
+    expect(availableGames.closest('article')).toHaveTextContent('18')
     expect(
       screen.getByRole('link', { name: /Torre di Londra/ }),
     ).toHaveAttribute('href', '/giochi/tower-of-london')

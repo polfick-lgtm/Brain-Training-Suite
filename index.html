@@ -14,7 +14,11 @@
     <div id="root"></div>
     <script>
       const route = new URLSearchParams(window.location.search).get('p')
-      if (route) window.history.replaceState(null, '', route)
+      if (route && route.startsWith('/') && !route.startsWith('//')) {
+        const base = '/Brain-Training-Suite'
+        const target = route.startsWith(`${base}/`) ? route : `${base}${route}`
+        window.history.replaceState(null, '', target)
+      }
     </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>

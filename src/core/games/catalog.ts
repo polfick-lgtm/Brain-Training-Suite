@@ -1,4 +1,5 @@
 import { CognitiveCategory, GameDefinition, GameId } from './types'
+import { arcadeDefinitions } from '../../games/arcade/catalog'
 
 export type GameStatus = 'available' | 'coming-soon'
 export type GameCatalogEntry = GameDefinition & { status: GameStatus }
@@ -47,6 +48,14 @@ export const gameCatalog: readonly GameCatalogEntry[] = [
     route: `/giochi/${id}` as const,
     difficulties: ['easy', 'medium', 'hard'] as const,
     estimateMinutes,
+    status: 'available' as const,
+  })),
+  ...arcadeDefinitions.map((game) => ({
+    ...game,
+    mode: 'arcade' as const,
+    route: `/giochi/${game.id}` as const,
+    difficulties: ['easy', 'medium', 'hard'] as const,
+    estimateMinutes: 5,
     status: 'available' as const,
   })),
 ]

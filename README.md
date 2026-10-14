@@ -1,14 +1,35 @@
 # Brain Training Suite
 
-Brain Training Suite è una PWA mobile-first e privacy-first per esercizi cognitivi semplici e misurabili. La versione **v1.0 Genesis** offre dieci giochi, sessioni guidate, progressi accessibili e un coach interamente locale.
+Brain Training Suite è una PWA mobile-first e privacy-first per esercizi cognitivi e giochi originali. La versione **v1.1 Arcade** offre dieci allenamenti, otto Arcade, sessioni guidate, progressi accessibili e un coach interamente locale.
 
 ## Caratteristiche
 
-Il branch `codex/graphical-games` introduce Memory con carte da girare, Simon
-con sequenze luminose e Torre di Londra con palline da spostare tra aste.
+Memory offre carte da girare, Simon sequenze luminose e Torre di Londra
+palline da spostare tra aste.
 I tre giochi offrono difficoltà, pausa, riavvio, risultato e salvataggio locale.
 Le interazioni usano pulsanti accessibili a tastiera e touch; simboli e numeri
 rendono le tavole leggibili anche senza distinguere i colori.
+
+## Arcade
+
+- Snake: raccogli stelle evitando muri e coda;
+- Spacca mattoni: racchetta, pallina, tre vite e una parete da ripulire;
+- Labirinto arcade: labirinti connessi, chiavi e uscita;
+- Blocchi cadenti: sette forme ruotabili, righe e punti;
+- Space Shooter: movimento, sparo e bersagli da abbattere;
+- Asteroidi: rotazione, motore, rocce divisibili e spazio avvolgente;
+- Sokoban: casse, obiettivi e annullamento delle mosse;
+- Puzzle 15: tessere numerate e configurazioni sempre solvibili.
+
+Gli Arcade hanno grafica originale e non richiedono emulatori o ROM. I risultati
+e i record per difficoltà restano locali. Il Coach e il Session Builder
+continuano a proporre i soli allenamenti. I giochi d'azione hanno tre vite e un
+limite di 180 secondi; tutte le tavole supportano pausa e riavvio. I punteggi su
+100 indicano il progresso verso l'obiettivo, mentre i punti Arcade e le mosse
+sono conservati nei dettagli e usati per i record.
+
+Per aprire il catalogo con un collegamento compatibile con l'hosting statico:
+`https://polfick-lgtm.github.io/Brain-Training-Suite/?p=%2Fgiochi`.
 
 - navigazione responsive tra Home, Giochi, Sessioni, Progressi, Profilo e Impostazioni;
 - Torre di Hanoi e Torre di Londra, quattro esercizi di memoria e quattro di attenzione;

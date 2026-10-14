@@ -9,6 +9,7 @@ import { SessionsPage } from '../pages/SessionsPage'
 import { SettingsPage } from '../pages/SettingsPage'
 import { HanoiPage } from '../games/hanoi/HanoiPage'
 import { TowerOfLondonPage } from '../games/tower-of-london/TowerOfLondonPage'
+import { arcadeDefinitions } from '../games/arcade/catalog'
 import {
   DigitSpanPage,
   MemoryPage,
@@ -25,6 +26,11 @@ import {
 const ProgressPage = lazy(() =>
   import('../pages/ProgressPage').then((module) => ({
     default: module.ProgressPage,
+  })),
+)
+const ArcadePage = lazy(() =>
+  import('../games/arcade/ArcadePages').then((module) => ({
+    default: module.ArcadePage,
   })),
 )
 
@@ -55,6 +61,17 @@ export function App() {
         <Route path="/giochi/trail-making" element={<TrailMakingPage />} />
         <Route path="/giochi/reaction" element={<ReactionPage />} />
         <Route path="/giochi/n-back" element={<NBackPage />} />
+        {arcadeDefinitions.map((game) => (
+          <Route
+            key={game.id}
+            path={`/giochi/${game.id}`}
+            element={
+              <Suspense fallback={<p role="status">Caricamento Arcade…</p>}>
+                <ArcadePage key={game.id} id={game.id} />
+              </Suspense>
+            }
+          />
+        ))}
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

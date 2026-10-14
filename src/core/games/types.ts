@@ -9,12 +9,24 @@ export type GameId =
   | 'digit-span'
   | 'n-back'
   | 'simon'
+  | ArcadeId
+
+export type ArcadeId =
+  | 'snake'
+  | 'breakout'
+  | 'maze'
+  | 'falling-blocks'
+  | 'space-shooter'
+  | 'asteroids'
+  | 'sokoban'
+  | 'puzzle-15'
 
 export type CognitiveCategory = 'logic' | 'memory' | 'attention' | 'speed'
 
 export type DifficultyLevel = 'easy' | 'medium' | 'hard'
 
 export type GameDefinition = {
+  mode?: 'training' | 'arcade'
   id: GameId
   title: string
   description: string

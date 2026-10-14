@@ -6,6 +6,19 @@ Aiutare le persone ad allenare capacità cognitive tramite esercizi semplici, mi
 
 ## Architettura
 
+La suite Arcade in `src/games/arcade` mantiene tre motori puri: griglie,
+blocchi cadenti e azione. Il labirinto usa un carving depth-first con rete
+connessa; Puzzle 15 parte da una soluzione e applica sole mosse valide;
+Sokoban usa livelli costruiti con casse spingibili verso gli obiettivi.
+La fisica usa `requestAnimationFrame` e passi limitati a 25 ms per evitare
+salti dopo sospensioni del browser. L'app mette in pausa quando è nascosta.
+Le tavole sono SVG/HTML, senza dipendenze aggiuntive, emulatori o ROM.
+Il modulo Arcade è caricato in modo differito e precached per l'offline.
+Gli ID estendono la validazione import/export senza cambiare lo schema dati.
+Il catalogo distingue `mode: arcade` dagli allenamenti: Coach e Session
+Builder filtrano gli Arcade. I record usano risultati persistiti per
+difficoltà, con minimo di mosse per i puzzle e massimo di punti per l'azione.
+
 I giochi grafici usano `GraphicalFrame` e `useGraphicalSession` per controlli,
 timer, pausa e salvataggio. La logica pura in `graphicalEngine.ts` separa le
 regole dalle tavole React: mescolamento Fisher–Yates delle carte, confronto
