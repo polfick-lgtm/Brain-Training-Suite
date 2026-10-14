@@ -1,6 +1,8 @@
 import { QuizGamePage } from '../shared/QuizGamePage'
 import { QuizGameDefinition } from '../shared/quizEngine'
 import { buildMemorySuiteRound } from './memorySuiteEngine'
+import { MemoryBoardPage } from './MemoryBoardPage'
+import { SimonBoardPage } from './SimonBoardPage'
 
 const definitions = {
   memory: {
@@ -42,7 +44,7 @@ function page(id: keyof typeof definitions) {
   return <QuizGamePage definition={definition} />
 }
 
-export const MemoryPage = () => page('memory')
+export const MemoryPage = MemoryBoardPage
 export const VisualMemoryPage = () => page('visual-memory')
 export const DigitSpanPage = () => page('digit-span')
-export const SimonPage = () => page('simon')
+export const SimonPage = SimonBoardPage

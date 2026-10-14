@@ -6,6 +6,15 @@ Aiutare le persone ad allenare capacità cognitive tramite esercizi semplici, mi
 
 ## Architettura
 
+I giochi grafici usano `GraphicalFrame` e `useGraphicalSession` per controlli,
+timer, pausa e salvataggio. La logica pura in `graphicalEngine.ts` separa le
+regole dalle tavole React: mescolamento Fisher–Yates delle carte, confronto
+sequenze Simon e ricerca breadth-first degli stati della Torre di Londra.
+Quest'ultima calcola la distanza minima reale dall'inizio, senza valori
+prefissati. Le tavole sono HTML/CSS per mantenere touch e tastiera nativi,
+senza nuove dipendenze grafiche. I vecchi risultati restano compatibili con
+lo schema IndexedDB; i nuovi dettagli distinguono coppie, sequenze e mosse.
+
 - **App shell** (`src/app`, `src/layouts`): routing e navigazione responsive.
 - **Pagine** (`src/pages`): Home, catalogo giochi, sessioni, progressi, profilo e impostazioni.
 - **Cognitive Engine** (`src/games`): giochi isolati, con logica testabile separata dalla UI.

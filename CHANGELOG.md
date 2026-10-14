@@ -4,6 +4,14 @@ Le modifiche rilevanti al progetto sono documentate in questo file secondo i pri
 
 ## [Unreleased]
 
+### Aggiunto
+
+- Memory con carte coperte, coppie mescolate, tentativi e punteggio di efficienza;
+- Simon con quattro pulsanti numerati, sequenze luminose crescenti e riproduzione dopo una pausa;
+- Torre di Londra con palline spostabili, capacità delle aste, obiettivo grafico e minimo di mosse calcolato;
+- salvataggio dei nuovi risultati nei Progressi e avanzamento del Session Builder;
+- test delle regole grafiche e partite complete con tastiera in Playwright.
+
 ## [1.0.0] - 2026-07-23
 
 ### Aggiunto
