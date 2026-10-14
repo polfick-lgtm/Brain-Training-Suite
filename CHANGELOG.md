@@ -4,6 +4,25 @@ Le modifiche rilevanti al progetto sono documentate in questo file secondo i pri
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-15
+
+### Aggiunto
+
+- sezione Arcade con Snake, Spacca mattoni, Labirinto arcade, Blocchi cadenti,
+  Space Shooter, Asteroidi, Sokoban e Puzzle 15;
+- grafica originale SVG/HTML, comandi touch e tastiera, difficoltà, pausa,
+  riavvio, obiettivi e record locali per difficoltà;
+- pausa automatica quando l'app passa in background, suoni facoltativi nei
+  giochi d'azione e annullamento delle mosse Sokoban;
+- import/export dei risultati Arcade e avvio di tutti i giochi offline;
+- separazione fra Arcade e percorsi di allenamento del Coach e Session Builder.
+
+### Corretto
+
+- ripristino delle route GitHub Pages mantenendo `/Brain-Training-Suite/`.
+- focus automatico sulla tavola dei giochi d'azione per usare Spazio come sparo;
+- aggiornamento correttivo di React Router compatibile con React 18 e Node 22.
+
 ### Aggiunto
 
 - Memory con carte coperte, coppie mescolate, tentativi e punteggio di efficienza;

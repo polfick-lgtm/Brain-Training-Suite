@@ -12,6 +12,14 @@ const gameId = z.enum([
   'digit-span',
   'n-back',
   'simon',
+  'snake',
+  'breakout',
+  'maze',
+  'falling-blocks',
+  'space-shooter',
+  'asteroids',
+  'sokoban',
+  'puzzle-15',
 ])
 
 export const exportSchema = z.object({

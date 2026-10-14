@@ -17,7 +17,7 @@ export function buildCoachSuggestions(
   const categoryScores = new Map<CognitiveCategory, number[]>()
   for (const session of recent) {
     const game = gameCatalog.find((entry) => entry.id === session.gameId)
-    if (!game) continue
+    if (!game || game.mode === 'arcade') continue
     const scores = categoryScores.get(game.category) ?? []
     scores.push(session.score)
     categoryScores.set(game.category, scores)
@@ -35,7 +35,7 @@ export function buildCoachSuggestions(
       : profile.goal
 
   return gameCatalog
-    .filter((game) => game.status === 'available')
+    .filter((game) => game.status === 'available' && game.mode !== 'arcade')
     .sort((a, b) => {
       const aPriority = a.category === preferredCategory ? 0 : 1
       const bPriority = b.category === preferredCategory ? 0 : 1

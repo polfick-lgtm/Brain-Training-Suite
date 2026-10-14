@@ -12,9 +12,12 @@ export function buildSessionPlan(
   const preferred = gameCatalog.filter(
     (game) =>
       game.status === 'available' &&
+      game.mode !== 'arcade' &&
       (goal === 'balanced' || game.category === goal),
   )
-  const fallback = gameCatalog.filter((game) => game.status === 'available')
+  const fallback = gameCatalog.filter(
+    (game) => game.status === 'available' && game.mode !== 'arcade',
+  )
   const pool =
     preferred.length >= count ? preferred : [...preferred, ...fallback]
   return [...new Set(pool.map((game) => game.id))].slice(0, count)
