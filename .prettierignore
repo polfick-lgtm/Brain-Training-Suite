@@ -4,3 +4,5 @@ coverage
 playwright-report
 test-results
 Brain-Training-Suite-Codex-Handoff/
+**/AGENTS.md
+**/.cursor/**

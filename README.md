@@ -4,6 +4,12 @@ Brain Training Suite è una PWA mobile-first e privacy-first per esercizi cognit
 
 ## Caratteristiche
 
+Il branch `codex/graphical-games` introduce Memory con carte da girare, Simon
+con sequenze luminose e Torre di Londra con palline da spostare tra aste.
+I tre giochi offrono difficoltà, pausa, riavvio, risultato e salvataggio locale.
+Le interazioni usano pulsanti accessibili a tastiera e touch; simboli e numeri
+rendono le tavole leggibili anche senza distinguere i colori.
+
 - navigazione responsive tra Home, Giochi, Sessioni, Progressi, Profilo e Impostazioni;
 - Torre di Hanoi e Torre di Londra, quattro esercizi di memoria e quattro di attenzione;
 - session builder per obiettivo e durata, con pausa e avanzamento automatico;

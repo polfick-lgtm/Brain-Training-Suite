@@ -1,4 +1,10 @@
 import { expect, test } from '@playwright/test'
+import {
+  boardKey,
+  londonStart,
+  moveBall,
+  shuffledPairs,
+} from '../src/games/shared/graphicalEngine'
 
 test('naviga tra Home, Progressi, Profilo e Torre di Hanoi', async ({
   page,
@@ -161,17 +167,43 @@ test('avvia, mette in pausa e completa Torre di Londra da tastiera', async ({
   await page.getByRole('button', { name: 'Pausa' }).click()
   await expect(page.getByText('Sessione in pausa.')).toBeVisible()
   await page.getByRole('button', { name: 'Riprendi' }).click()
-  for (let round = 0; round < 3; round += 1) await page.keyboard.press('2')
+  const target = await page
+    .locator('.london-board')
+    .first()
+    .locator('.london-balls')
+    .evaluateAll((pegs) =>
+      pegs.map((peg) =>
+        Array.from(peg.children).map((ball) => Number(ball.textContent) - 1),
+      ),
+    )
+  const queue = [{ board: londonStart, path: [] as number[][] }]
+  const seen = new Set([boardKey(londonStart)])
+  for (let index = 0; index < queue.length; index++) {
+    const current = queue[index]
+    if (boardKey(current.board) === boardKey(target)) {
+      for (const [from, to] of current.path) {
+        await page.locator('button.london-peg').nth(from).press('Enter')
+        await page.locator('button.london-peg').nth(to).press('Enter')
+      }
+      break
+    }
+    for (let from = 0; from < 3; from++)
+      for (let to = 0; to < 3; to++) {
+        const board = moveBall(current.board, from, to)
+        if (board && !seen.has(boardKey(board))) {
+          seen.add(boardKey(board))
+          queue.push({ board, path: [...current.path, [from, to]] })
+        }
+      }
+  }
   await expect(
     page.getByRole('heading', { name: 'Risultato salvato' }),
   ).toBeVisible()
 })
 
 for (const [slug, title] of [
-  ['memory', 'Memory'],
   ['visual-memory', 'Memoria visiva'],
   ['digit-span', 'Digit Span'],
-  ['simon', 'Simon'],
   ['stroop', 'Stroop'],
   ['trail-making', 'Trail Making'],
   ['reaction', 'Test di reazione'],
@@ -190,6 +222,9 @@ for (const [slug, title] of [
 test('crea una sessione per obiettivo e avanza dopo un gioco', async ({
   page,
 }) => {
+  await page.addInitScript(() => {
+    Math.random = () => 0.25
+  })
   await page.goto('./sessioni')
   await page.locator('.session-builder select').nth(0).selectOption('memory')
   await page.locator('.session-builder select').nth(1).selectOption('10')
@@ -199,11 +234,77 @@ test('crea una sessione per obiettivo e avanza dopo un gioco', async ({
   await page.getByRole('button', { name: 'Riprendi sessione' }).click()
   await page.getByRole('link', { name: 'Apri gioco' }).click()
   await page.getByRole('button', { name: 'Avvia' }).click()
-  for (let round = 0; round < 3; round += 1) await page.keyboard.press('2')
+  const cards = shuffledPairs(4, () => 0.25)
+  for (let symbol = 0; symbol < 4; symbol++)
+    for (let index = 0; index < cards.length; index++) {
+      if (cards[index] === symbol)
+        await page.locator('.memory-card').nth(index).click()
+    }
   await page.getByRole('link', { name: 'Sessioni' }).click()
   await expect(page.getByText('Completato').first()).toBeVisible()
   await expect(page.getByRole('link', { name: 'Apri gioco' })).toBeVisible()
 })
+
+test('Memory grafico conserva coppie e salva il risultato', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Math.random = () => 0.25
+  })
+  await page.goto('./giochi/memory')
+  await page.getByRole('button', { name: 'Avvia', exact: true }).click()
+  await expect(page.locator('.memory-card')).toHaveCount(8)
+  await page.getByRole('button', { name: 'Pausa', exact: true }).click()
+  await expect(page.getByText('Sessione in pausa.')).toBeVisible()
+  await page.getByRole('button', { name: 'Riprendi', exact: true }).click()
+  const cards = shuffledPairs(4, () => 0.25)
+  for (let symbol = 0; symbol < 4; symbol++)
+    for (let index = 0; index < cards.length; index++) {
+      if (cards[index] === symbol)
+        await page.locator('.memory-card').nth(index).press('Enter')
+    }
+  await expect(
+    page.getByRole('heading', { name: 'Risultato salvato' }),
+  ).toBeVisible()
+  await page.getByRole('link', { name: 'Progressi', exact: true }).click()
+  await expect(page.getByRole('row', { name: /Memory 1 100/ })).toBeVisible()
+})
+
+test('Simon riproduce sequenze crescenti e salva il risultato', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Math.random = () => 0
+  })
+  await page.goto('./giochi/simon')
+  await page.getByRole('button', { name: 'Avvia', exact: true }).click()
+  const pad = page.getByRole('button', { name: '1 Rosso', exact: true })
+  for (let level = 1; level <= 3; level++) {
+    await expect(pad).toBeEnabled({ timeout: 5000 })
+    for (let index = 0; index < level; index++) await pad.press('Enter')
+  }
+  await expect(
+    page.getByRole('heading', { name: 'Risultato salvato' }),
+  ).toBeVisible()
+})
+
+for (const game of ['memory', 'simon', 'tower-of-london']) {
+  test(`tavola grafica ${game} leggibile a 320px`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width: 320, height: 760 })
+    await page.goto(`./giochi/${game}`)
+    await page.getByRole('button', { name: 'Avvia', exact: true }).click()
+    await expect(page.locator('.graphical-board')).toBeVisible()
+    expect(
+      await page.locator('body').evaluate((body) => body.scrollWidth),
+    ).toBeLessThanOrEqual(320)
+    await page.screenshot({
+      path: testInfo.outputPath(`${game}-mobile.png`),
+      fullPage: true,
+    })
+  })
+}
 
 test('mostra e disattiva il coach locale', async ({ page }) => {
   await page.goto('./')
