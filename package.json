@@ -12,11 +12,14 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
+    "test:luma": "node --test tests-luma/*.test.mjs",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:pwa": "npm run build && playwright test --config playwright.pwa.config.ts",
-    "verify": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage"
+    "verify": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run test:luma && npm run test:server",
+    "test:server": "python -m unittest discover -s server/tests -v",
+    "configure:luma": "node tools/configure-luma.mjs"
   },
   "dependencies": {
     "dexie": "^4.4.4",

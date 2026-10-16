@@ -478,6 +478,9 @@ export function initialState() {
     history: [],
     streakSavers: 0,
     purchases: [],
+    challengeDays: [],
+    challengePractice: {},
+    challengeLastDate: null,
   }
 }
 export function hydrate(raw) {
@@ -540,6 +543,33 @@ export function hydrate(raw) {
             .filter((x) => typeof x?.id === 'string' && Number.isFinite(x?.at))
             .slice(-100)
         : [],
+      challengeDays: [
+        ...new Set(
+          (Array.isArray(v.challengeDays) ? v.challengeDays : []).filter(
+            (n) => Number.isInteger(n) && n >= 1 && n <= 8,
+          ),
+        ),
+      ].sort((a, b) => a - b),
+      challengeLastDate:
+        typeof v.challengeLastDate === 'string' &&
+        /^\d{4}-\d{2}-\d{2}$/.test(v.challengeLastDate)
+          ? v.challengeLastDate
+          : null,
+      challengePractice: Object.fromEntries(
+        Array.from({ length: 8 }, (_, i) => String(i + 1)).map((day) => [
+          day,
+          [
+            ...new Set(
+              (Array.isArray(v.challengePractice?.[day])
+                ? v.challengePractice[day]
+                : []
+              ).filter(
+                (index) => Number.isInteger(index) && index >= 0 && index < 5,
+              ),
+            ),
+          ],
+        ]),
+      ),
     }
   } catch {
     return fresh
@@ -677,6 +707,54 @@ export function completeExtra(
   })
   s.history = s.history.slice(-30)
   return { state: s, xp, gems, first: true }
+}
+export function completeChallengeDay(
+  state,
+  day,
+  { correct, total, listening = 0 },
+  now = new Date(),
+) {
+  if (
+    !Number.isInteger(day) ||
+    day < 1 ||
+    day > 8 ||
+    day !== state.challengeDays.length + 1
+  )
+    throw new Error('Completa i giorni della sfida in ordine.')
+  if (state.challengeLastDate === dayKey(now))
+    throw new Error(
+      'Hai già completato la tappa di oggi. Torna domani per continuare.',
+    )
+  if (
+    !Number.isFinite(correct) ||
+    !Number.isFinite(total) ||
+    total < 1 ||
+    correct < 0 ||
+    correct > total ||
+    !Number.isFinite(listening) ||
+    listening < 0
+  )
+    throw new Error('Risultato della sfida non valido.')
+  const s = structuredClone(state)
+  const xp = 8 + Math.round((correct / total) * 12)
+  const gems = correct === total ? 3 : 1
+  s.challengeDays.push(day)
+  s.challengeLastDate = dayKey(now)
+  s.xp += xp
+  s.gems += gems
+  studyDay(s, xp, now)
+  s.daily.lessons++
+  s.daily.listening += listening
+  if (correct / total >= 0.9) s.daily.accurate++
+  s.history.push({
+    date: dayKey(now),
+    xp,
+    lesson: null,
+    accuracy: Math.round((correct / total) * 100),
+    kind: 'challenge',
+  })
+  s.history = s.history.slice(-30)
+  return { state: s, xp, gems, accuracy: Math.round((correct / total) * 100) }
 }
 export function claimChest(state, chapter, now = new Date()) {
   if (!Number.isInteger(chapter) || chapter < 0 || chapter >= chapters.length)

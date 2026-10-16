@@ -18,7 +18,7 @@ type State = {
     displayName: string,
     preferredLevel: number,
     goal?: LocalProfile['goal'],
-  ) => void
+  ) => Promise<void>
   updateSettings: (
     changes: Partial<Omit<AppSettings, 'id' | 'updatedAt'>>,
   ) => void
@@ -43,7 +43,11 @@ export const useTrainingStore = create<State>((set, get) => ({
     }
     await hydration
   },
-  setProfile: (displayName, preferredLevel, goal = get().profile.goal) => {
+  setProfile: async (
+    displayName,
+    preferredLevel,
+    goal = get().profile.goal,
+  ) => {
     const profile = {
       ...get().profile,
       displayName,
@@ -51,8 +55,8 @@ export const useTrainingStore = create<State>((set, get) => ({
       goal,
       updatedAt: new Date().toISOString(),
     }
+    await trainingRepository.saveProfile(profile)
     set({ profile })
-    void trainingRepository.saveProfile(profile)
   },
   updateSettings: (changes) => {
     const settings = {

@@ -11,7 +11,21 @@ import {
   currentStreak,
   weekActivity,
   dayKey,
+  completeChallengeDay,
 } from './model.mjs'
+import { challengeDays } from './challenge.mjs'
+import { PhraseTutor } from './tutor.mjs'
+import {
+  configured as authConfigured,
+  register as registerAccount,
+  signIn as signInAccount,
+  signOut as signOutAccount,
+  currentPlayer,
+  loadProgress,
+  saveProgress,
+  listPlayers,
+  setPlayerApproval,
+} from './auth.mjs'
 const paths = {
   home: 'm3 11 9-8 9 8 M5 10v11h14V10 M9 21v-7h6v7',
   map: 'm3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2z M9 3v16 M15 5v16',
@@ -52,6 +66,7 @@ const escape = (s) =>
         c
       ],
   )
+const MIGRATION_KEY = 'luma-progress-owner-v1'
 let raw = null,
   storageAvailable = true
 try {
@@ -62,14 +77,59 @@ try {
 let state = hydrate(raw),
   session = null,
   view = 'learn',
-  chapterShown = null
+  chapterShown = null,
+  player = null,
+  syncTimer = null
 const content = document.querySelector('#content'),
   lessonDialog = document.querySelector('#lesson-dialog'),
-  infoDialog = document.querySelector('#info-dialog')
+  infoDialog = document.querySelector('#info-dialog'),
+  authGate = document.querySelector('#auth-gate')
+let tutorIndex = 0
+let tutorDayNumber = 1
+const tutor = new PhraseTutor({
+  synthesis: window.speechSynthesis,
+  Utterance: window.SpeechSynthesisUtterance,
+  onStage: updateTutorStage,
+})
+
+function tutorRoot() {
+  return (infoDialog.open ? infoDialog : content).querySelector('.tutor-card')
+}
+function updateTutorStage(stage) {
+  const root = tutorRoot()
+  if (!root) return
+  const labels = {
+    ready:
+      'Avvia il tutor: ascolta l’italiano, prova a tradurre e poi ripeti l’inglese.',
+    italian: 'Ascolta la frase in italiano.',
+    think: 'Ora prova a dirla in inglese. La risposta arriva dopo la pausa.',
+    english: 'Ascolta la pronuncia inglese.',
+    repeat:
+      'Tocca a te: ripeti ad alta voce. Quando sei pronto, passa alla prossima frase.',
+    revealed: 'Confronta la tua frase e ascolta la pronuncia inglese.',
+    unavailable:
+      'Audio non disponibile: leggi entrambe le versioni e ripeti ad alta voce.',
+  }
+  root.querySelector('[data-tutor-status]').textContent = labels[stage]
+  root.querySelector('[data-tutor-answer]').hidden = [
+    'ready',
+    'italian',
+    'think',
+  ].includes(stage)
+}
+function tutorCard(day) {
+  if (tutorDayNumber !== day.day) tutorIndex = 0
+  tutorDayNumber = day.day
+  const pair = day.phrases[tutorIndex]
+  const practised = state.challengePractice[day.day] || []
+  return `<section class="tutor-card" aria-label="Tutor italiano e inglese"><small>FRASI GUIDATE · ${tutorIndex + 1} / ${day.phrases.length} · ${practised.length} PRATICATE</small><h3>Prima l’italiano, poi tocca a te.</h3><p class="tutor-prompt" lang="it">${escape(pair.meaning)}</p><p class="tutor-answer" data-tutor-answer lang="en" hidden>${escape(pair.phrase)}</p><p data-tutor-status role="status">Avvia il tutor: ascolta l’italiano, prova a tradurre e poi ripeti l’inglese.</p><label>Pausa per tradurre <select data-tutor-pause aria-label="Pausa per tradurre"><option value="3">3 secondi</option><option value="5" selected>5 secondi</option><option value="8">8 secondi</option></select></label><div class="tutor-controls"><button class="primary" data-action="tutor-play">${icon('sound')} ASCOLTA IL TUTOR</button><button class="secondary" data-action="tutor-stop">FERMA AUDIO</button><button class="auth-switch" data-action="tutor-reveal">MOSTRA L’INGLESE</button><button class="auth-switch" data-action="tutor-english">RIASCOLTA INGLESE</button><button class="auth-switch" data-action="tutor-slow">INGLESE LENTO</button></div><div class="tutor-controls"><button class="secondary" data-action="tutor-previous" ${tutorIndex === 0 ? 'disabled' : ''}>PRECEDENTE</button><button class="secondary" data-action="tutor-confirm">${tutorIndex === day.phrases.length - 1 ? 'HO RIPETUTO · CONCLUDI PRATICA' : 'HO RIPETUTO · PROSSIMA'}</button></div><p><a class="auth-switch" href="https://translate.google.com/?sl=it&amp;tl=en&amp;text=${encodeURIComponent(pair.meaning)}&amp;op=translate" target="_blank" rel="noopener noreferrer">APRI QUESTA FRASE IN GOOGLE TRADUTTORE</a></p><p class="muted">Voci sintetiche del dispositivo. La ripetizione è libera: il microfono non viene registrato né valutato. Dopo le frasi, completa i quattro esercizi della lezione.</p></section>`
+}
 const navItems = [
   ['learn', 'map', 'Impara'],
+  ['challenge', 'sun', '8 Giorni'],
   ['sounds', 'sound', 'Suoni'],
   ['practice', 'practice', 'Ripasso'],
+  ['translate', 'chat', 'Traduttore'],
   ['ranking', 'trophy', 'Classifiche'],
   ['quests', 'quest', 'Missioni'],
   ['shop', 'store', 'Negozio'],
@@ -77,12 +137,15 @@ const navItems = [
 ]
 const destinations = {
   learn: '#learn',
+  challenge: '#challenge',
   sounds: '#sounds',
   practice: '#practice',
+  translate: '#translate',
   ranking: '#ranking',
   quests: '#quests',
   shop: '#shop',
   profile: '#profile',
+  admin: '#admin',
 }
 document.querySelector('#navigation').innerHTML =
   navItems
@@ -102,6 +165,19 @@ function notify(message) {
 function save() {
   try {
     localStorage.setItem('luma-progress-v1', JSON.stringify(state))
+    if (player?.approval_status === 'approved') {
+      clearTimeout(syncTimer)
+      const owner = player.id
+      const snapshot = JSON.parse(JSON.stringify(state))
+      syncTimer = setTimeout(() => {
+        if (player?.id !== owner) return
+        saveProgress(owner, snapshot).catch(() =>
+          notify(
+            'Sincronizzazione non riuscita. Riprova quando la connessione è disponibile.',
+          ),
+        )
+      }, 700)
+    }
   } catch {
     storageAvailable = false
     notify(
@@ -109,6 +185,110 @@ function save() {
     )
   }
 }
+function showAuth({ mode = 'login', message = '', setup = false } = {}) {
+  document.body.classList.add('auth-required')
+  authGate.hidden = false
+  if (setup) {
+    authGate.innerHTML = `<div class="auth-card"><img src="mascot.svg" alt="" width="58" height="58"><p class="eyebrow">LUMA · ACCOUNT</p><h1 id="auth-title">Account non ancora configurati</h1><p>Il servizio dei profili personali è in preparazione.</p><p class="auth-message">Riprova più tardi.</p></div>`
+    return
+  }
+  const registering = mode === 'register'
+  authGate.innerHTML = `<div class="auth-card"><img src="mascot.svg" alt="" width="58" height="58"><p class="eyebrow">LUMA · INGLESE GENERALE</p><h1 id="auth-title">${registering ? 'Crea il tuo profilo' : 'Bentornato'}</h1><p>${registering ? 'La richiesta di accesso viene sottoposta ad approvazione.' : 'Accedi per continuare il tuo percorso da ogni dispositivo.'}</p>${registering ? '<p class="auth-privacy">Nome e indirizzo email saranno visibili all’amministratore per valutare la richiesta. I progressi saranno salvati nel tuo profilo personale. Non verranno inviate email.</p>' : ''}<form id="auth-form">${registering ? '<label>Nome giocatore<input name="displayName" autocomplete="nickname" maxlength="40" required></label>' : ''}<label>Email<input name="email" type="email" autocomplete="email" required></label><label>Password<input name="password" type="password" autocomplete="${registering ? 'new-password' : 'current-password'}" minlength="12" maxlength="128" required></label><button class="primary" type="submit">${registering ? 'RICHIEDI ACCESSO' : 'ACCEDI'}</button><p class="auth-message" role="status">${escape(message)}</p></form><button class="auth-switch" data-auth-mode="${registering ? 'login' : 'register'}">${registering ? 'Hai già un account? Accedi' : 'Non hai un account? Registrati'}</button></div>`
+}
+async function activatePlayer(profile) {
+  player = profile
+  if (profile.approval_status !== 'approved') {
+    if (profile.approval_status === 'rejected') {
+      showAuth({
+        message:
+          'La richiesta di accesso non è stata approvata. Contatta chi gestisce Luma per ricevere assistenza.',
+      })
+      return
+    }
+    showAuth({
+      message:
+        'Richiesta registrata: attendi l’approvazione dell’amministratore, poi accedi di nuovo.',
+    })
+    return
+  }
+  const remote = await loadProgress(profile.id)
+  const previousOwner = localStorage.getItem(MIGRATION_KEY)
+  if (remote) state = hydrate(JSON.stringify(remote))
+  else if (raw && (!previousOwner || previousOwner === profile.id)) {
+    await saveProgress(profile.id, state)
+    localStorage.setItem(MIGRATION_KEY, profile.id)
+  } else state = hydrate(null)
+  localStorage.setItem(MIGRATION_KEY, profile.id)
+  save()
+  authGate.hidden = true
+  document.body.classList.remove('auth-required')
+  document.querySelector('[data-view="admin"]')?.remove()
+  if (profile.role === 'admin')
+    document
+      .querySelector('#navigation')
+      .insertAdjacentHTML(
+        'beforeend',
+        `<a class="nav-link" href="#admin" data-view="admin" aria-label="Amministrazione">${icon('lock')}<span class="nav-label">Amministrazione</span></a>`,
+      )
+  render()
+}
+async function initializeAuth() {
+  if (!authConfigured) {
+    showAuth({ setup: true })
+    return
+  }
+  try {
+    const profile = await currentPlayer()
+    if (!profile) {
+      showAuth()
+      return
+    }
+    await activatePlayer(profile)
+  } catch {
+    showAuth({
+      message:
+        'Sessione scaduta o servizio non raggiungibile. Accedi di nuovo.',
+    })
+  }
+}
+authGate.addEventListener('click', (event) => {
+  const switcher = event.target.closest('[data-auth-mode]')
+  if (switcher) showAuth({ mode: switcher.dataset.authMode })
+})
+authGate.addEventListener('submit', async (event) => {
+  if (event.target.id !== 'auth-form') return
+  event.preventDefault()
+  const form = new FormData(event.target)
+  const submit = event.target.querySelector('[type="submit"]')
+  submit.disabled = true
+  try {
+    if (form.has('displayName')) {
+      await registerAccount({
+        displayName: String(form.get('displayName')).trim(),
+        email: String(form.get('email')).trim(),
+        password: String(form.get('password')),
+      })
+      showAuth({
+        message:
+          'Richiesta registrata. L’amministratore potrà approvare il tuo profilo dalla propria area. Accedi dopo l’approvazione.',
+      })
+    } else {
+      await signInAccount({
+        email: String(form.get('email')).trim(),
+        password: String(form.get('password')),
+      })
+      const profile = await currentPlayer()
+      if (!profile)
+        throw new Error('Profilo non trovato. Completa prima la registrazione.')
+      await activatePlayer(profile)
+    }
+  } catch (error) {
+    showAuth({
+      mode: form.has('displayName') ? 'register' : 'login',
+      message: error.message || 'Operazione non riuscita.',
+    })
+  }
+})
 function refreshDay() {
   if (state.daily.date !== dayKey())
     state.daily = {
@@ -175,7 +355,7 @@ function renderShell() {
   document.querySelector('#stats').innerHTML =
     `<span class="stat league-stat" title="Lega settimanale">${icon('trophy')}<span>Esploratori</span></span><span class="stat fire" title="Giorni consecutivi">${icon('fire')}${currentStreak(state)}</span><span class="stat gem" title="Gemme">${icon('gem')}${state.gems}</span><span class="stat xp" title="Esperienza totale">${icon('quest')}${state.xp} <small>XP</small></span><a href="#profile" class="avatar" aria-label="Apri il tuo profilo">L</a>`
   document.querySelector('#rightbar').innerHTML =
-    `<section class="panel league-panel"><div class="panel-heading"><h2>Lega Esploratori</h2><a class="link-button" href="#ranking">VEDI LEGA</a></div><div class="league-body"><span class="league-medal">${icon('trophy')}</span><div><strong>Il tuo viaggio è iniziato.</strong><p>Ogni lezione aggiunge XP alla classifica.</p><span class="badge">CLASSIFICA DIMOSTRATIVA</span></div></div></section><section class="panel"><div class="panel-heading"><h2>Missioni giornaliere</h2><a class="link-button" href="#quests">VEDI TUTTE</a></div>${questHTML()}</section><section class="panel"><div class="panel-heading"><h2>La tua settimana</h2><span class="badge">${currentStreak(state)} ${currentStreak(state) === 1 ? 'GIORNO' : 'GIORNI'}</span></div><div class="weekly">${weeklyHTML()}</div><p class="week-note">Un piccolo passo al giorno.<br>Ogni settimana fa strada.</p></section><div class="side-footer"><b>luma</b> · IMPARA CON CURIOSITÀ<br>PROTOTIPO LOCALE · INGLESE GENERALE</div>`
+    `<section class="panel league-panel"><div class="panel-heading"><h2>Lega Esploratori</h2><a class="link-button" href="#ranking">VEDI LEGA</a></div><div class="league-body"><span class="league-medal">${icon('trophy')}</span><div><strong>Il tuo viaggio è iniziato.</strong><p>Ogni lezione aggiunge XP alla classifica.</p><span class="badge">CLASSIFICA DIMOSTRATIVA</span></div></div></section><section class="panel"><div class="panel-heading"><h2>Missioni giornaliere</h2><a class="link-button" href="#quests">VEDI TUTTE</a></div>${questHTML()}</section><section class="panel"><div class="panel-heading"><h2>La tua settimana</h2><span class="badge">${currentStreak(state)} ${currentStreak(state) === 1 ? 'GIORNO' : 'GIORNI'}</span></div><div class="weekly">${weeklyHTML()}</div><p class="week-note">Un piccolo passo al giorno.<br>Ogni settimana fa strada.</p></section><div class="side-footer"><b>luma</b> · IMPARA CON CURIOSITÀ<br>PERCORSO INDIPENDENTE · INGLESE GENERALE</div>`
   if (!storageAvailable)
     document.querySelector('.sidebar-bottom').textContent =
       'Salvataggio browser non disponibile'
@@ -385,9 +565,9 @@ function renderProfile() {
     header(
       'PROFILO · I TUOI PROGRESSI',
       'Il tuo percorso personale.',
-      'I risultati restano su questo browser e puoi esportarli quando vuoi.',
+      'Il tuo percorso personale, sincronizzato con il tuo account.',
     ) +
-    `<div class="score-grid"><div class="score-box"><strong>${state.xp}</strong><span>XP guadagnati</span></div><div class="score-box"><strong>${state.completed.length} / ${lessons.length}</strong><span>Lezioni completate</span></div><div class="score-box"><strong>${currentStreak(state)}</strong><span>Giorni di serie</span></div><div class="score-box"><strong>${state.gems}</strong><span>Gemme raccolte</span></div></div><section class="content-card"><h2>Attività settimanale</h2><div class="weekly">${weeklyHTML()}</div></section><section class="content-card"><div class="panel-heading"><h2>Esporta i progressi</h2><span class="badge">FILE LOCALE</span></div><p>Scarica una copia JSON di lezioni, missioni e serie dal tuo browser.</p><button class="primary" data-action="export">ESPORTA I PROGRESSI</button></section><section class="content-card"><h2>Le ultime attività</h2>${
+    `<div class="score-grid"><div class="score-box"><strong>${state.xp}</strong><span>XP guadagnati</span></div><div class="score-box"><strong>${state.completed.length} / ${lessons.length}</strong><span>Lezioni completate</span></div><div class="score-box"><strong>${currentStreak(state)}</strong><span>Giorni di serie</span></div><div class="score-box"><strong>${state.gems}</strong><span>Gemme raccolte</span></div></div><section class="content-card"><h2>${escape(player?.display_name || 'Il tuo profilo')}</h2><p>ACCOUNT APPROVATO · progressi sincronizzati</p><button class="auth-switch" data-action="logout">ESCI DALL’ACCOUNT</button></section><section class="content-card"><h2>Attività settimanale</h2><div class="weekly">${weeklyHTML()}</div></section><section class="content-card"><div class="panel-heading"><h2>Esporta i progressi</h2><span class="badge">COPIA DI SICUREZZA</span></div><p>Scarica una copia JSON di lezioni, missioni e serie.</p><button class="primary" data-action="export">ESPORTA I PROGRESSI</button></section><section class="content-card"><h2>Le ultime attività</h2>${
       state.history.length
         ? state.history
             .slice(-8)
@@ -399,6 +579,38 @@ function renderProfile() {
             .join('')
         : '<p>Il tuo viaggio comincia con la prima lezione.</p>'
     }</section>`
+}
+function renderChallenge() {
+  const complete = state.challengeDays.length
+  const nextDay = complete + 1
+  const waiting = state.challengeLastDate === dayKey()
+  const active = challengeDays[nextDay - 1]
+  content.innerHTML =
+    header(
+      'PERCORSO INTENSIVO · 8 GIORNI',
+      'Piccoli passi, ogni giorno.',
+      'Una sfida quotidiana per mettere in pratica frasi utili con ascolto, ripetizione e una breve lezione guidata.',
+    ) +
+    `<section class="content-card challenge-overview"><div class="panel-heading"><h2>La tua 8 Days Challenge</h2><span class="badge">${complete} / 8 COMPLETATI</span></div><div class="progress-track" role="progressbar" aria-label="Avanzamento 8 Days Challenge" aria-valuenow="${complete}" aria-valuemin="0" aria-valuemax="8"><div class="progress-fill" style="width:${(complete / 8) * 100}%"></div></div><p>Ogni tappa propone cinque frasi originali: ascolta l’italiano, prova a tradurre durante la pausa, ascolta l’inglese e ripeti. Poi verifica quello che hai imparato con quattro esercizi sulle stesse frasi. Completa un giorno alla volta.</p></section>${active ? `<section class="content-card challenge-current"><span class="eyebrow">${waiting ? 'PROSSIMA TAPPA · DOMANI' : `GIORNO ${nextDay} · LA TAPPA DI OGGI`}</span><h2>${escape(active.title)}</h2><p>${escape(active.goal)}</p>${waiting ? '<p>La prossima lezione si apre domani. Puoi ripassare le frasi dei giorni completati qui sotto.</p>' : tutorCard(active)}<div class="challenge-actions"><button class="primary" data-action="challenge-start" data-day="${nextDay}" ${waiting || (state.challengePractice[nextDay] || []).length !== active.phrases.length ? 'disabled' : ''}>${waiting ? 'TORNA DOMANI' : (state.challengePractice[nextDay] || []).length === active.phrases.length ? 'INIZIA LA LEZIONE' : 'COMPLETA PRIMA LE FRASI'}</button><button class="auth-switch" data-action="challenge-print" data-day="${nextDay}">STAMPA LA SCHEDA</button></div></section>` : `<section class="content-card challenge-current"><span class="eyebrow">TRAGUARDO RAGGIUNTO</span><h2>Hai completato gli otto giorni!</h2><p>Ripassa dal percorso o continua con le altre lezioni di inglese generale.</p></section>`}<section class="challenge-grid" aria-label="Le otto tappe">${challengeDays
+      .map((day) => {
+        const done = state.challengeDays.includes(day.day)
+        const isNext = day.day === nextDay
+        return `<article class="content-card challenge-day ${done ? 'completed' : isNext && !waiting ? 'available' : ''}"><span class="challenge-day-number">${done ? '✓' : String(day.day).padStart(2, '0')}</span><div><small>GIORNO ${day.day}</small><h3>${escape(day.title)}</h3><p>${escape(day.goal)}</p></div><span class="badge">${done ? 'COMPLETATO' : isNext ? (waiting ? 'DOMANI' : 'OGGI') : 'BLOCCATO'}</span>${done ? `<button class="auth-switch" data-action="tutor-review" data-day="${day.day}">RIPASSA LE FRASI</button>` : ''}</article>`
+      })
+      .join(
+        '',
+      )}</section><section class="content-card challenge-note"><h2>Materiali e sessioni</h2><p>Luma offre esercizi originali, ascolto tramite sintesi vocale e una scheda giornaliera stampabile. Video-corsi, PDF originali, lezioni live e supporto di tutor di Learnworlds non fanno parte di questa app.</p></section>${googlePracticeCard()}<section class="challenge-print-sheet" id="challenge-print-sheet"><p class="eyebrow">LUMA · SCHEDA GIORNALIERA</p><h1 id="challenge-print-title"></h1><p id="challenge-print-goal"></p><h2 id="challenge-print-phrase"></h2><p id="challenge-print-meaning"></p><p>Ascolta la frase, ripetila ad alta voce e completa la lezione del giorno.</p></section>`
+}
+function googlePracticeCard() {
+  return `<section class="content-card google-practice"><h2>Google Traduttore e Fai pratica</h2><p>Usa il traduttore come supporto alle frasi del giorno. Si apre una pagina Google separata quando premi il pulsante.</p><form action="https://translate.google.com/" method="get" target="_blank" rel="noopener noreferrer"><input type="hidden" name="sl" value="auto"><input type="hidden" name="op" value="translate"><label for="google-translation-text">Frase da tradurre</label><textarea id="google-translation-text" name="text" maxlength="500" required placeholder="Scrivi una frase da approfondire…"></textarea><label for="google-translation-language">Traduci in</label><select id="google-translation-language" name="tl"><option value="en">Inglese</option><option value="it">Italiano</option></select><button class="secondary" type="submit">TRADUCI CON GOOGLE</button></form><h3>Conversazione e ascolto con Fai pratica (Beta)</h3><p>Nell’app Google Traduttore sul telefono: apri <strong>Fai pratica</strong>, scegli italiano per le istruzioni, inglese da imparare, il tuo livello e uno scenario legato alla lezione di oggi. La disponibilità dipende dall’app, dall’account e dalla regione.</p><a class="auth-switch" href="https://support.google.com/translate/answer/16475590?hl=it" target="_blank" rel="noopener noreferrer">ISTRUZIONI UFFICIALI DI GOOGLE</a><p class="muted">Questa funzione appartiene a Google e si usa nella sua app. I suoi risultati e progressi non vengono sincronizzati con Luma; Luma non invia il profilo o i progressi a Google.</p></section>`
+}
+function renderTranslator() {
+  content.innerHTML =
+    header(
+      'STRUMENTI DI SUPPORTO',
+      'Approfondisci una frase.',
+      'Traduzione e pratica aggiuntiva per accompagnare il tuo percorso Luma.',
+    ) + googlePracticeCard()
 }
 function renderShop() {
   content.innerHTML =
@@ -418,23 +630,71 @@ function renderChess() {
     ) +
     `<section class="content-card chess-puzzle"><span class="badge">SFIDA LOCALE</span><h2>Proteggi il re</h2><p>Sei il bianco. Quale pezzo sposti per dare scacco matto in una mossa?</p><div class="chess-board" role="grid" aria-label="Scacchiera dimostrativa">${['♜', '·', '·', '♚', '·', '♟', '·', '·', '·', '♔', '·', '♕', '·', '·', '♙', '·'].map((square, i) => `<button data-square="${i}" class="square ${Math.floor(i / 4) % 2 === Math.floor((i % 4) / 2) ? 'light' : ''}" aria-label="Casella ${i + 1}${square !== '·' ? `, ${square}` : ''}">${square}</button>`).join('')}</div><div class="feedback" id="chess-feedback" aria-live="polite">Seleziona la regina bianca sulla scacchiera.</div></section>`
 }
+let adminOffset = 0
+let adminRequest = 0
+async function renderAdmin() {
+  if (player?.role !== 'admin') {
+    content.innerHTML = header(
+      'ACCESSO RISERVATO',
+      'Amministrazione',
+      'Questa pagina è riservata all’amministratore.',
+    )
+    return
+  }
+  const request = ++adminRequest
+  const intro = header(
+    'GESTIONE GIOCATORI',
+    'Amministrazione',
+    'Approva le nuove richieste e gestisci gli accessi a Luma.',
+  )
+  content.innerHTML =
+    intro +
+    '<section class="content-card" role="status">Caricamento richieste…</section>'
+  try {
+    const result = await listPlayers(adminOffset)
+    if (
+      view !== 'admin' ||
+      request !== adminRequest ||
+      player?.role !== 'admin'
+    )
+      return
+    const labels = {
+      pending: 'In attesa',
+      approved: 'Approvato',
+      rejected: 'Rifiutato',
+    }
+    content.innerHTML =
+      intro +
+      `<section class="content-card"><div class="panel-heading"><h2>${result.total} giocatori registrati</h2><button class="auth-switch" data-action="admin-refresh">AGGIORNA</button></div><div class="admin-players">${result.players.map((item) => `<article class="admin-player"><div><h3>${escape(item.display_name)}</h3><p>${escape(item.email)}</p><span class="badge">${labels[item.approval_status] || 'In attesa'}</span></div><div class="admin-actions">${item.approval_status !== 'approved' ? `<button class="primary" data-review-id="${escape(item.id)}" data-review-status="approved">APPROVA</button>` : ''}${item.approval_status !== 'rejected' ? `<button class="secondary" data-review-id="${escape(item.id)}" data-review-status="rejected">${item.approval_status === 'approved' ? 'REVOCA ACCESSO' : 'RIFIUTA'}</button>` : ''}</div></article>`).join('') || '<p>Nessuna richiesta da mostrare.</p>'}</div><div class="admin-pagination"><button class="auth-switch" data-admin-page="${Math.max(0, adminOffset - 100)}" ${adminOffset === 0 ? 'disabled' : ''}>PRECEDENTI</button><button class="auth-switch" data-admin-page="${adminOffset + 100}" ${adminOffset + 100 >= result.total ? 'disabled' : ''}>SUCCESSIVI</button></div></section>`
+  } catch (error) {
+    if (view === 'admin')
+      content.innerHTML =
+        intro +
+        `<section class="content-card" role="alert">${escape(error.message)}<button class="auth-switch" data-action="admin-refresh">RIPROVA</button></section>`
+  }
+}
 function render() {
+  if (player?.approval_status !== 'approved') return
   refreshDay()
   renderShell()
   ;(
     ({
       learn: renderLearn,
+      challenge: renderChallenge,
       practice: renderPractice,
+      translate: renderTranslator,
       sounds: renderSounds,
       quests: renderQuests,
       ranking: renderRanking,
       profile: renderProfile,
+      admin: renderAdmin,
       shop: renderShop,
       chess: renderChess,
     })[view] || renderLearn
   )()
 }
 function navigate() {
+  tutor.stop()
   view = Object.hasOwn(destinations, location.hash.slice(1))
     ? location.hash.slice(1)
     : location.hash === '#chess'
@@ -452,6 +712,7 @@ function info(title, body) {
   infoDialog.showModal()
 }
 function speak(text) {
+  tutor.stop()
   if (!('speechSynthesis' in window)) {
     notify('Sintesi vocale non disponibile in questo browser.')
     return false
@@ -474,6 +735,7 @@ function speak(text) {
   return true
 }
 function startLesson(id, practice = false, config = {}) {
+  tutor.stop()
   const unlocked =
     state.completed.includes(id) || id === nextLesson(state) || practice
   if (!unlocked) return
@@ -487,12 +749,13 @@ function startLesson(id, practice = false, config = {}) {
     correct: 0,
     listening: 0,
     finished: false,
-    questions: config.questions || lessons[id].questions,
+    questions: [...(config.questions || lessons[id].questions)],
     title: config.title || lessons[id].title,
     chapter: config.chapter ?? lessons[id].chapter,
     extraId: config.extraId || null,
     extraXp: config.xp,
     extraGems: config.gems,
+    challengeDay: config.challengeDay || null,
   }
   renderExercise()
   lessonDialog.showModal()
@@ -621,6 +884,13 @@ function check() {
     session.correct++
     if (q.type === 'listen') session.listening++
   }
+  if (!correct && session.challengeDay && !q.retry) {
+    session.questions.push({
+      ...q,
+      retry: true,
+      prompt: `Ripasso mirato · ${q.prompt}`,
+    })
+  }
   const fb = lessonDialog.querySelector('.feedback')
   fb.classList.toggle('error', !correct)
   fb.innerHTML = `<strong>${correct ? 'Esatto, ben fatto!' : 'Ci siamo quasi!'}</strong>${correct ? '' : `Risposta: ${escape(Array.isArray(q.answer) ? q.answer.join(' ') : q.answer)}<br>`}<small>${escape(q.note)}</small>`
@@ -660,7 +930,13 @@ function finish() {
   const total = session.questions.length,
     accuracy = Math.round((session.correct / total) * 100)
   let result
-  if (session.extraId) {
+  if (session.challengeDay) {
+    result = completeChallengeDay(state, session.challengeDay, {
+      correct: session.correct,
+      total,
+      listening: session.listening,
+    })
+  } else if (session.extraId) {
     result = completeExtra(state, session.extraId, {
       xp: session.extraXp,
       gems: session.extraGems,
@@ -686,6 +962,9 @@ function finish() {
     ? 20
     : result.gems || 0
   lessonDialog.innerHTML = `<div class="lesson-layout"><section class="summary"><img src="mascot.svg" alt="La mascotte Luma festeggia con te"><p class="eyebrow">IL TUO PROSSIMO PASSO</p><h2>${session.extraId?.startsWith('story:') ? 'Storia completata!' : session.extraId?.startsWith('radio:') ? 'Radio completata!' : session.extraId?.startsWith('legendary:') ? 'Sfida leggendaria!' : 'Lezione completata!'}</h2><p>${accuracy === 100 ? 'Perfetto! Hai ascoltato con attenzione e scelto ogni risposta correttamente.' : 'Ogni tentativo aiuta la memoria. Puoi ripetere questa tappa dal percorso.'}</p><div class="summary-stats"><div><small>XP GUADAGNATI</small><strong>+${result.xp}</strong></div><div><small>PRECISIONE</small><strong>${accuracy}%</strong></div><div><small>GEMME</small><strong>+${chestReward}</strong></div></div></section><footer class="lesson-bottom"><button class="primary" data-action="finish">TORNA AL PERCORSO</button></footer></div>`
+  if (session.challengeDay)
+    lessonDialog.querySelector('.summary h2').textContent =
+      `Giorno ${session.challengeDay} completato!`
   lessonDialog.querySelector('.primary').focus()
 }
 function closeLesson() {
@@ -693,9 +972,40 @@ function closeLesson() {
   lessonDialog.close()
   session = null
 }
-document.addEventListener('click', (event) => {
+document.addEventListener('click', async (event) => {
   const b = event.target.closest('button')
   if (!b) return
+  if (b.dataset.reviewId !== undefined) {
+    if (player?.role !== 'admin') return
+    const approve = b.dataset.reviewStatus === 'approved'
+    if (
+      !confirm(
+        approve
+          ? 'Approvare questo giocatore?'
+          : 'Rifiutare o revocare l’accesso a questo giocatore?',
+      )
+    )
+      return
+    b.disabled = true
+    try {
+      await setPlayerApproval(b.dataset.reviewId, b.dataset.reviewStatus)
+      await renderAdmin()
+      notify(approve ? 'Giocatore approvato.' : 'Accesso revocato.')
+    } catch (error) {
+      b.disabled = false
+      notify(error.message)
+    }
+    return
+  }
+  if (b.dataset.adminPage !== undefined) {
+    adminOffset = Number(b.dataset.adminPage)
+    await renderAdmin()
+    return
+  }
+  if (b.dataset.action === 'admin-refresh') {
+    await renderAdmin()
+    return
+  }
   if (b.dataset.chapter !== undefined) {
     const selected = Number(b.dataset.chapter),
       furthest =
@@ -773,6 +1083,128 @@ document.addEventListener('click', (event) => {
     }
   }
   switch (b.dataset.action) {
+    case 'logout':
+      tutor.stop()
+      tutorIndex = 0
+      clearTimeout(syncTimer)
+      if (player) await saveProgress(player.id, state).catch(() => {})
+      signOutAccount()
+      player = null
+      content.innerHTML = ''
+      document.querySelector('[data-view="admin"]')?.remove()
+      showAuth()
+      break
+    case 'tutor-review': {
+      const day = challengeDays[Number(b.dataset.day) - 1]
+      if (!day || !state.challengeDays.includes(day.day)) break
+      tutor.stop()
+      tutorIndex = 0
+      info(`Ripasso · Giorno ${day.day}`, tutorCard(day))
+      break
+    }
+    case 'tutor-play':
+    case 'tutor-english':
+    case 'tutor-slow': {
+      const day = challengeDays[tutorDayNumber - 1]
+      const pauseSeconds = Number(
+        tutorRoot().querySelector('[data-tutor-pause]').value,
+      )
+      tutor.play(day.phrases[tutorIndex], {
+        pauseSeconds,
+        englishOnly: b.dataset.action !== 'tutor-play',
+        slow: b.dataset.action === 'tutor-slow',
+      })
+      break
+    }
+    case 'tutor-stop':
+      tutor.stop()
+      updateTutorStage('ready')
+      break
+    case 'tutor-reveal':
+      tutor.stop()
+      updateTutorStage('revealed')
+      break
+    case 'tutor-previous':
+    case 'tutor-next': {
+      const day = challengeDays[tutorDayNumber - 1]
+      tutor.stop()
+      tutorIndex = Math.min(
+        day.phrases.length - 1,
+        Math.max(0, tutorIndex + (b.dataset.action === 'tutor-next' ? 1 : -1)),
+      )
+      tutorRoot().outerHTML = tutorCard(day)
+      tutorRoot().querySelector('[data-action="tutor-play"]').focus()
+      break
+    }
+    case 'tutor-confirm': {
+      const day = challengeDays[tutorDayNumber - 1]
+      const practised = state.challengePractice[day.day] || []
+      if (!practised.includes(tutorIndex)) {
+        state.challengePractice[day.day] = [...practised, tutorIndex]
+        save()
+      }
+      tutor.stop()
+      tutorIndex = Math.min(day.phrases.length - 1, tutorIndex + 1)
+      tutorRoot().outerHTML = tutorCard(day)
+      const ready =
+        state.challengePractice[day.day].length === day.phrases.length
+      const quiz = content.querySelector('[data-action="challenge-start"]')
+      if (
+        ready &&
+        quiz &&
+        Number(quiz.dataset.day) === day.day &&
+        state.challengeLastDate !== dayKey()
+      ) {
+        quiz.disabled = false
+        quiz.textContent = 'INIZIA LA LEZIONE'
+      }
+      tutorRoot().querySelector('[data-action="tutor-play"]').focus()
+      if (ready)
+        notify(
+          'Pratica completata. Ora puoi verificare le stesse frasi nella lezione.',
+        )
+      break
+    }
+    case 'challenge-start': {
+      const dayNumber = Number(b.dataset.day)
+      const day = challengeDays[dayNumber - 1]
+      if (
+        dayNumber !== state.challengeDays.length + 1 ||
+        state.challengeLastDate === dayKey() ||
+        !day ||
+        (state.challengePractice[dayNumber] || []).length !== day.phrases.length
+      ) {
+        notify('La prossima tappa sarà disponibile domani.')
+        return
+      }
+      startLesson(day.lessonIndex, true, {
+        title: `8 Days Challenge · Giorno ${dayNumber}`,
+        chapter: lessons[day.lessonIndex].chapter,
+        questions: day.questions,
+        challengeDay: dayNumber,
+      })
+      break
+    }
+    case 'challenge-print': {
+      const day = challengeDays[Number(b.dataset.day) - 1]
+      if (!day) break
+      document.querySelector('#challenge-print-title').textContent =
+        `Giorno ${day.day} · ${day.title}`
+      document.querySelector('#challenge-print-goal').textContent = day.goal
+      document.querySelector('#challenge-print-phrase').textContent =
+        'Le cinque frasi del giorno'
+      document.querySelector('#challenge-print-meaning').textContent =
+        day.phrases
+          .map((pair) => `${pair.meaning}\n${pair.phrase}`)
+          .join('\n\n')
+      document.body.classList.add('challenge-printing')
+      window.print()
+      setTimeout(
+        () => document.body.classList.remove('challenge-printing'),
+        500,
+      )
+      break
+    }
     case 'more': {
       const menu = document.querySelector('#more-menu'),
         open = b.getAttribute('aria-expanded') !== 'true'
@@ -786,7 +1218,7 @@ document.addEventListener('click', (event) => {
     case 'about':
       info(
         'Impara con Luma',
-        `<p>Un percorso indipendente d’inglese generale ispirato a tappe, ripasso, missioni e ascolti.</p><ul><li>Lezioni con risposta multipla e frasi da comporre.</li><li>Storie interattive, ascolto e ripasso dei capitoli.</li><li>Missioni giornaliere, progressi e ricompense locali.</li></ul><p>I progressi sono conservati nel browser. Classifica e scacchi sono funzioni dimostrative.</p>`,
+        `<p>Un percorso indipendente d’inglese generale ispirato a tappe, ripasso, missioni e ascolti.</p><ul><li>Lezioni con risposta multipla e frasi da comporre.</li><li>Storie interattive, ascolto e ripasso dei capitoli.</li><li>Missioni giornaliere, progressi e ricompense locali.</li></ul><p>I progressi sono sincronizzati nel profilo personale e una copia resta nel browser. Classifica e scacchi sono funzioni dimostrative.</p>`,
       )
       break
     case 'course-choice':
@@ -848,10 +1280,13 @@ document.addEventListener('click', (event) => {
       next()
       break
     case 'finish':
-      closeLesson()
-      chapterShown = null
-      if (location.hash !== '#learn') location.hash = 'learn'
-      else render()
+      {
+        const route = session?.challengeDay ? 'challenge' : 'learn'
+        closeLesson()
+        chapterShown = null
+        if (location.hash !== `#${route}`) location.hash = route
+        else render()
+      }
       break
     case 'buy-streak':
       try {
@@ -885,6 +1320,11 @@ lessonDialog.addEventListener('cancel', () => {
   session = null
   if ('speechSynthesis' in window) speechSynthesis.cancel()
 })
+infoDialog.addEventListener('close', () => {
+  tutor.stop()
+  if (player?.approval_status === 'approved' && view === 'challenge')
+    renderChallenge()
+})
 document.addEventListener('keydown', (e) => {
   if (!lessonDialog.open || !session || session.finished) return
   if (e.key === 'Enter') {
@@ -898,6 +1338,9 @@ document.addEventListener('keydown', (e) => {
   }
 })
 document.addEventListener('visibilitychange', () => {
+  tutor.stop()
   if (!document.hidden) render()
 })
-navigate()
+initializeAuth().then(() => {
+  if (player?.approval_status === 'approved') navigate()
+})

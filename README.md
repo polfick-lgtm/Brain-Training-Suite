@@ -73,9 +73,13 @@ Il comando `npm run verify` esegue in sequenza formato, lint, typecheck e test c
 
 Tutti i dati restano nel browser in IndexedDB. Non esistono account, telemetria, pubblicità o richieste verso servizi applicativi remoti. Da Impostazioni è possibile esportare, importare con validazione o cancellare tutti i dati. I giochi supportano mouse, touch e tastiera; l'interfaccia include gestione del focus, riduzione animazioni, tema e dimensione del testo.
 
+Queste condizioni riguardano la Brain Training Suite principale. Luma usa invece profili e progressi sul backend del server, con approvazione dall’area amministrativa e senza invio di email.
+
 ## Pubblicazione
 
 Ogni push su `main` avvia GitHub Actions, esegue lint, test e build, quindi pubblica `dist` con le GitHub Pages Actions ufficiali. Le pull request eseguono la fase di qualità senza deploy.
+
+Luma, inclusa in `public/luma/`, usa un backend Python separato con database SQLite e area di amministrazione per approvare i giocatori. Il frontend resta su GitHub Pages; account e progressi restano sul server. Consulta [docs/LUMA-ACCOUNT-SETUP.md](docs/LUMA-ACCOUNT-SETUP.md).
 
 URL previsto: `https://polfick-lgtm.github.io/Brain-Training-Suite/`
 
