@@ -10,6 +10,13 @@ export default defineConfig({
       registerType: 'prompt',
       workbox: {
         navigateFallbackDenylist: [/^\/Brain-Training-Suite\/luma\//],
+        globIgnores: ['**/luma/**'],
+        runtimeCaching: [
+          {
+            urlPattern: /\/luma\/.*/,
+            handler: 'NetworkOnly',
+          },
+        ],
       },
       includeAssets: ['favicon.svg'],
       manifest: {
