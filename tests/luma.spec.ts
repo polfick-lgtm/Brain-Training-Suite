@@ -173,8 +173,14 @@ test('an approved player can complete and sync the first challenge day', async (
     page.getByRole('button', { name: 'TORNA DOMANI' }),
   ).toBeDisabled()
   await expect.poll(() => progressSynced).toBe(true)
-  await page.getByRole('button', { name: 'RIPASSA LE FRASI' }).click()
+  await page.getByRole('button', { name: /RIPASSO MIRATO/ }).click()
   await expect(page.locator('#info-dialog .tutor-card')).toBeVisible()
+  await expect(page.locator('#info-dialog')).toContainText(
+    'Ripartiamo dalle frasi',
+  )
+  await expect(page.locator('#info-dialog .tutor-prompt')).toHaveText(
+    'Buongiorno, mi chiamo Anna.',
+  )
   await page.getByRole('button', { name: 'Chiudi', exact: true }).click()
   await page.getByRole('link', { name: 'Traduttore', exact: true }).click()
   await expect(

@@ -109,6 +109,7 @@ function questionsFor(phrases) {
   return [
     {
       type: 'choice',
+      phraseIndex: 0,
       prompt: `Come si dice: ${phrases[0].meaning}`,
       options: [phrases[1].phrase, phrases[0].phrase, phrases[3].phrase],
       answer: phrases[0].phrase,
@@ -116,6 +117,7 @@ function questionsFor(phrases) {
     },
     {
       type: 'words',
+      phraseIndex: 1,
       prompt: phrases[1].meaning,
       bank: [...words.slice(1), words[0]],
       answer: words,
@@ -123,6 +125,7 @@ function questionsFor(phrases) {
     },
     {
       type: 'listen',
+      phraseIndex: 2,
       prompt: 'Ascolta e scegli il significato',
       phrase: phrases[2].phrase,
       options: [phrases[3].meaning, phrases[4].meaning, phrases[2].meaning],
@@ -131,6 +134,7 @@ function questionsFor(phrases) {
     },
     {
       type: 'choice',
+      phraseIndex: 4,
       prompt: `Come si dice: ${phrases[4].meaning}`,
       options: [phrases[4].phrase, phrases[2].phrase, phrases[0].phrase],
       answer: phrases[4].phrase,
