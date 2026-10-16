@@ -61,10 +61,37 @@ o tunnel approvato verso `http://127.0.0.1:8796` e verificarne DNS, certificato 
 pubblici prima di attivare gli account dal frontend. Non esporre il database SQLite,
 le condivisioni amministrative o i servizi VMware.
 
-Impostare la **repository variable** GitHub Actions `LUMA_API_BASE_URL` all’indirizzo
-HTTPS approvato. È un indirizzo pubblico, non una chiave o credenziale. Il workflow
-genera `public/luma/config.js` da questa variabile; nessuna credenziale di server o
+Il workflow usa l’endpoint personale `https://regulator-underfed-query.ngrok-free.dev`.
+La **repository variable** GitHub Actions `LUMA_API_BASE_URL` permette di sostituirlo
+con un altro indirizzo HTTPS approvato. È un indirizzo pubblico, non una chiave o credenziale.
+Il workflow genera `public/luma/config.js` da questo indirizzo; nessuna credenziale di server o
 amministratore viene inclusa nei file pubblici.
+
+### Tunnel personale ngrok
+
+Il tunnel viene eseguito sullo stesso server del backend e inoltra esclusivamente
+verso `http://127.0.0.1:8796`. Non usa dominio, account o tunnel Cloudflare aziendali.
+Il frontend rimane su GitHub Pages. `Install-LumaNgrok.ps1` verifica l’hash del binario,
+la compatibilità effettiva e la configurazione prima di creare il task `LumaTunnel`
+come LocalService. L’ispezione delle richieste e l’interfaccia web locale dell’agente
+sono disabilitate. Il token è nel solo file protetto `C:\LumaApi\tunnel\private\ngrok.yml`;
+non va passato come argomento di processo, copiato nel repository o mostrato nei log.
+
+`Deploy-LumaNgrok.ps1` chiede le credenziali Windows in modo protetto, importa il token
+da un file cifrato DPAPI dell’utente corrente e verifica HTTPS e CORS dall’esterno.
+Se la verifica pubblica non riesce, arresta e disabilita il task del tunnel.
+`-SkipBackendUpdate` consente di riprendere la configurazione quando il backend è già
+stato aggiornato e il relativo risultato è disponibile; non ripete il rilascio API.
+
+Il client aggiunge l’header `ngrok-skip-browser-warning` documentato dal provider
+solo per gli endpoint gratuiti ngrok. Il backend consente questo header in preflight
+mantenendo l’elenco esplicito degli origin autorizzati. L’header non dà accesso ai profili:
+registrazione, approvazione e sessioni restano gestite da Luma.
+
+Il piano gratuito ha quote di utilizzo e dipende dalla disponibilità del servizio;
+controllare la pagina Usage dell’account prima di estendere il numero di giocatori.
+Per interrompere la pubblicazione: arrestare e disabilitare solo `LumaTunnel`.
+Il backend e il database rimangono sul server e continuano ad ascoltare su loopback.
 
 `C:\LumaApi\config\config.json` definisce gli origin CORS consentiti, la durata delle
 sessioni e il percorso dati. L’origin di GitHub Pages è `https://polfick-lgtm.github.io`
@@ -106,5 +133,26 @@ gli aggiornamenti concorrenti dello stesso profilo seguono l’ultimo salvataggi
 Il percorso 8 Giorni usa esercizi e frasi originali Luma. Non include video, PDF
 proprietari, dirette o tutor del corso Learnworlds preso come riferimento.
 
-Senza `LUMA_API_BASE_URL`, il frontend mostra una schermata di servizio in preparazione.
+Ogni giorno comprende cinque coppie di frasi italiano/inglese (40 in totale).
+Il tutor sintetico legge prima l’italiano; dopo la fine della lettura lascia una
+pausa di 3, 5 o 8 secondi per il tentativo dell’allievo, mostra e legge l’inglese,
+quindi invita alla ripetizione. Sono disponibili lettura inglese lenta, riascolto,
+visualizzazione manuale e interruzione dell’audio. Cambiare frase, pagina, profilo
+o nascondere la scheda annulla le letture e le pause pendenti.
+
+L’allievo conferma liberamente di aver ripetuto ogni frase: non viene registrato
+né valutato il microfono. Questa pratica si salva nel profilo e sblocca il quiz
+del giorno. I quattro esercizi usano le stesse frasi appena praticate; ogni risposta
+errata viene riproposta una volta come ripasso mirato prima del risultato.
+I giorni completati rimangono disponibili per il ripasso e la scheda stampabile
+contiene tutte e cinque le coppie di frasi. L’audio dipende dalle voci del dispositivo.
+
+La sezione Traduttore e i collegamenti delle singole frasi aprono Google Traduttore
+in una pagina esterna su azione dell’utente. Non usano API Google private o iframe.
+La modalità Google “Fai pratica” (Beta) si usa nell’app Google secondo la relativa
+guida ufficiale: non è incorporata in Luma e i suoi progressi non vengono importati.
+Luma non invia a Google il profilo o i progressi; il testo viene condiviso soltanto
+quando l’utente apre una frase o invia il modulo di traduzione.
+
+In sviluppo locale, senza configurazione API, il frontend mostra una schermata di servizio in preparazione.
 Un health locale positivo non prova il funzionamento pubblico né l’accesso da cellulare.

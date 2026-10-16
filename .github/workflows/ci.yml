@@ -31,7 +31,7 @@ jobs:
       - run: npm run verify
       - name: Configure Luma API address
         env:
-          LUMA_API_BASE_URL: ${{ vars.LUMA_API_BASE_URL }}
+          LUMA_API_BASE_URL: ${{ vars.LUMA_API_BASE_URL || 'https://regulator-underfed-query.ngrok-free.dev' }}
         run: npm run configure:luma
       - run: npm run build
       - run: npx playwright install --with-deps chromium

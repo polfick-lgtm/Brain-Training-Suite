@@ -479,6 +479,7 @@ export function initialState() {
     streakSavers: 0,
     purchases: [],
     challengeDays: [],
+    challengePractice: {},
     challengeLastDate: null,
   }
 }
@@ -554,6 +555,21 @@ export function hydrate(raw) {
         /^\d{4}-\d{2}-\d{2}$/.test(v.challengeLastDate)
           ? v.challengeLastDate
           : null,
+      challengePractice: Object.fromEntries(
+        Array.from({ length: 8 }, (_, i) => String(i + 1)).map((day) => [
+          day,
+          [
+            ...new Set(
+              (Array.isArray(v.challengePractice?.[day])
+                ? v.challengePractice[day]
+                : []
+              ).filter(
+                (index) => Number.isInteger(index) && index >= 0 && index < 5,
+              ),
+            ),
+          ],
+        ]),
+      ),
     }
   } catch {
     return fresh

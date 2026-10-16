@@ -109,22 +109,34 @@ test('real API registration, admin approval, learning sync and session revocatio
 
   await login(page, 'player@example.test')
   await page.getByRole('link', { name: '8 Giorni' }).click()
+  await expect(
+    page.getByRole('button', { name: 'COMPLETA PRIMA LE FRASI' }),
+  ).toBeDisabled()
+  for (let phrase = 0; phrase < 5; phrase++) {
+    await page.locator('[data-action="tutor-confirm"]').click()
+  }
   await page.getByRole('button', { name: 'INIZIA LA LEZIONE' }).click()
   const dialog = page.locator('#lesson-dialog')
-  await dialog.locator('[data-option]').filter({ hasText: 'Hello' }).click()
+  await dialog
+    .locator('[data-option]')
+    .filter({ hasText: 'Good morning, my name is Anna.' })
+    .click()
   await dialog.locator('[data-action="check"]').click()
   await dialog.locator('[data-action="next"]').click()
-  for (const word of ['I', 'am', 'Anna'])
+  for (const word of ['My', 'name', 'is', 'Anna.'])
     await dialog.locator('[data-word]').filter({ hasText: word }).click()
   await dialog.locator('[data-action="check"]').click()
   await dialog.locator('[data-action="next"]').click()
   await dialog
     .locator('[data-option]')
-    .filter({ hasText: 'Buongiorno' })
+    .filter({ hasText: 'Vengo dall’Italia.' })
     .click()
   await dialog.locator('[data-action="check"]').click()
   await dialog.locator('[data-action="next"]').click()
-  await dialog.locator('[data-option]').filter({ hasText: 'meet' }).click()
+  await dialog
+    .locator('[data-option]')
+    .filter({ hasText: 'Nice to meet you.' })
+    .click()
   await dialog.locator('[data-action="check"]').click()
   const progressSaved = page.waitForResponse(
     (response) =>

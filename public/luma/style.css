@@ -2332,6 +2332,83 @@ body.auth-required {
   }
 }
 /* Administrator requests use the same cards and controls as the learning area. */
+.tutor-card {
+  margin: 24px 0;
+  padding: 22px;
+  border: 2px solid #cde8dc;
+  border-radius: 20px;
+  background: #f5fcf8;
+}
+.tutor-prompt,
+.tutor-answer {
+  font-size: clamp(1.2rem, 3vw, 1.65rem);
+  font-weight: 700;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.tutor-answer {
+  color: #176d53;
+}
+.tutor-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+.tutor-controls button {
+  max-width: 100%;
+  white-space: normal;
+}
+.tutor-controls .secondary,
+.google-practice .secondary {
+  padding: 12px 16px;
+  border: 2px solid #c6dfd2;
+  border-bottom-width: 4px;
+  border-radius: 12px;
+  background: white;
+  color: #225d4a;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.tutor-controls .secondary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.tutor-card select {
+  padding: 8px;
+  margin-left: 8px;
+  border: 1px solid #bfd8cb;
+  border-radius: 8px;
+  background: white;
+}
+.tutor-card [data-tutor-status] {
+  min-height: 3em;
+}
+#challenge-print-meaning {
+  white-space: pre-line;
+}
+.google-practice form {
+  display: grid;
+  gap: 12px;
+  margin: 20px 0 28px;
+}
+.google-practice textarea {
+  min-height: 100px;
+  resize: vertical;
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #dfe8e3;
+  border-radius: 12px;
+  font: inherit;
+}
+.google-practice select {
+  padding: 10px;
+  border: 1px solid #bfd8cb;
+  border-radius: 8px;
+  background: white;
+}
 .admin-player {
   display: flex;
   justify-content: space-between;

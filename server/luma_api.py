@@ -305,7 +305,7 @@ class Application:
         headers = [("Content-Type", "application/json; charset=utf-8"), ("Cache-Control", "no-store"),
                    ("X-Content-Type-Options", "nosniff"), ("Referrer-Policy", "no-referrer"), ("Vary", "Origin")]
         if allowed:
-            headers += [("Access-Control-Allow-Origin", origin), ("Access-Control-Allow-Headers", "Authorization, Content-Type"),
+            headers += [("Access-Control-Allow-Origin", origin), ("Access-Control-Allow-Headers", "Authorization, Content-Type, ngrok-skip-browser-warning"),
                         ("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS"), ("Access-Control-Max-Age", "600")]
         try:
             if origin and not allowed:

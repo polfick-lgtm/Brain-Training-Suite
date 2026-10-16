@@ -1,5 +1,6 @@
 const config = window.LUMA_CONFIG || {}
 const url = String(config.apiBaseUrl || '').replace(/\/$/, '')
+const usesNgrok = url && /\.ngrok-free\.(dev|app)$/.test(new URL(url).hostname)
 const SESSION_KEY = 'luma-auth-v2'
 let session = null
 
@@ -32,6 +33,7 @@ async function request(path, { method = 'GET', body, anonymous = false } = {}) {
     method,
     credentials: 'omit',
     headers: {
+      ...(usesNgrok ? { 'ngrok-skip-browser-warning': '1' } : {}),
       ...(body ? { 'Content-Type': 'application/json' } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },

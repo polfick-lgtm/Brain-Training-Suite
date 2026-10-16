@@ -120,6 +120,7 @@ class AccountApiTests(unittest.TestCase):
         preflight = self.call("/api/progress", "OPTIONS")
         self.assertEqual(preflight["headers"]["Access-Control-Allow-Origin"], "https://polfick-lgtm.github.io")
         self.assertNotIn("Access-Control-Allow-Credentials", preflight["headers"])
+        self.assertIn("ngrok-skip-browser-warning", preflight["headers"]["Access-Control-Allow-Headers"])
         self.assertEqual(self.call("/api/auth/register", "POST", raw=b"{bad")["status"], 400)
         self.assertEqual(self.call("/api/auth/register", "POST", raw=b"x" * (BODY_LIMIT + 1))["status"], 413)
         self.assertEqual(self.register(password="short")["status"], 400)

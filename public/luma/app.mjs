@@ -14,6 +14,7 @@ import {
   completeChallengeDay,
 } from './model.mjs'
 import { challengeDays } from './challenge.mjs'
+import { PhraseTutor } from './tutor.mjs'
 import {
   configured as authConfigured,
   register as registerAccount,
@@ -83,11 +84,52 @@ const content = document.querySelector('#content'),
   lessonDialog = document.querySelector('#lesson-dialog'),
   infoDialog = document.querySelector('#info-dialog'),
   authGate = document.querySelector('#auth-gate')
+let tutorIndex = 0
+let tutorDayNumber = 1
+const tutor = new PhraseTutor({
+  synthesis: window.speechSynthesis,
+  Utterance: window.SpeechSynthesisUtterance,
+  onStage: updateTutorStage,
+})
+
+function tutorRoot() {
+  return (infoDialog.open ? infoDialog : content).querySelector('.tutor-card')
+}
+function updateTutorStage(stage) {
+  const root = tutorRoot()
+  if (!root) return
+  const labels = {
+    ready:
+      'Avvia il tutor: ascolta l’italiano, prova a tradurre e poi ripeti l’inglese.',
+    italian: 'Ascolta la frase in italiano.',
+    think: 'Ora prova a dirla in inglese. La risposta arriva dopo la pausa.',
+    english: 'Ascolta la pronuncia inglese.',
+    repeat:
+      'Tocca a te: ripeti ad alta voce. Quando sei pronto, passa alla prossima frase.',
+    revealed: 'Confronta la tua frase e ascolta la pronuncia inglese.',
+    unavailable:
+      'Audio non disponibile: leggi entrambe le versioni e ripeti ad alta voce.',
+  }
+  root.querySelector('[data-tutor-status]').textContent = labels[stage]
+  root.querySelector('[data-tutor-answer]').hidden = [
+    'ready',
+    'italian',
+    'think',
+  ].includes(stage)
+}
+function tutorCard(day) {
+  if (tutorDayNumber !== day.day) tutorIndex = 0
+  tutorDayNumber = day.day
+  const pair = day.phrases[tutorIndex]
+  const practised = state.challengePractice[day.day] || []
+  return `<section class="tutor-card" aria-label="Tutor italiano e inglese"><small>FRASI GUIDATE · ${tutorIndex + 1} / ${day.phrases.length} · ${practised.length} PRATICATE</small><h3>Prima l’italiano, poi tocca a te.</h3><p class="tutor-prompt" lang="it">${escape(pair.meaning)}</p><p class="tutor-answer" data-tutor-answer lang="en" hidden>${escape(pair.phrase)}</p><p data-tutor-status role="status">Avvia il tutor: ascolta l’italiano, prova a tradurre e poi ripeti l’inglese.</p><label>Pausa per tradurre <select data-tutor-pause aria-label="Pausa per tradurre"><option value="3">3 secondi</option><option value="5" selected>5 secondi</option><option value="8">8 secondi</option></select></label><div class="tutor-controls"><button class="primary" data-action="tutor-play">${icon('sound')} ASCOLTA IL TUTOR</button><button class="secondary" data-action="tutor-stop">FERMA AUDIO</button><button class="auth-switch" data-action="tutor-reveal">MOSTRA L’INGLESE</button><button class="auth-switch" data-action="tutor-english">RIASCOLTA INGLESE</button><button class="auth-switch" data-action="tutor-slow">INGLESE LENTO</button></div><div class="tutor-controls"><button class="secondary" data-action="tutor-previous" ${tutorIndex === 0 ? 'disabled' : ''}>PRECEDENTE</button><button class="secondary" data-action="tutor-confirm">${tutorIndex === day.phrases.length - 1 ? 'HO RIPETUTO · CONCLUDI PRATICA' : 'HO RIPETUTO · PROSSIMA'}</button></div><p><a class="auth-switch" href="https://translate.google.com/?sl=it&amp;tl=en&amp;text=${encodeURIComponent(pair.meaning)}&amp;op=translate" target="_blank" rel="noopener noreferrer">APRI QUESTA FRASE IN GOOGLE TRADUTTORE</a></p><p class="muted">Voci sintetiche del dispositivo. La ripetizione è libera: il microfono non viene registrato né valutato. Dopo le frasi, completa i quattro esercizi della lezione.</p></section>`
+}
 const navItems = [
   ['learn', 'map', 'Impara'],
   ['challenge', 'sun', '8 Giorni'],
   ['sounds', 'sound', 'Suoni'],
   ['practice', 'practice', 'Ripasso'],
+  ['translate', 'chat', 'Traduttore'],
   ['ranking', 'trophy', 'Classifiche'],
   ['quests', 'quest', 'Missioni'],
   ['shop', 'store', 'Negozio'],
@@ -98,6 +140,7 @@ const destinations = {
   challenge: '#challenge',
   sounds: '#sounds',
   practice: '#practice',
+  translate: '#translate',
   ranking: '#ranking',
   quests: '#quests',
   shop: '#shop',
@@ -548,15 +591,26 @@ function renderChallenge() {
       'Piccoli passi, ogni giorno.',
       'Una sfida quotidiana per mettere in pratica frasi utili con ascolto, ripetizione e una breve lezione guidata.',
     ) +
-    `<section class="content-card challenge-overview"><div class="panel-heading"><h2>La tua 8 Days Challenge</h2><span class="badge">${complete} / 8 COMPLETATI</span></div><div class="progress-track" role="progressbar" aria-label="Avanzamento 8 Days Challenge" aria-valuenow="${complete}" aria-valuemin="0" aria-valuemax="8"><div class="progress-fill" style="width:${(complete / 8) * 100}%"></div></div><p>Ogni tappa riprende il formato guidato del corso: una frase chiave, ascolto e ripetizione, poi esercizi interattivi. Completa un giorno alla volta.</p></section>${active ? `<section class="content-card challenge-current"><span class="eyebrow">${waiting ? 'PROSSIMA TAPPA · DOMANI' : `GIORNO ${nextDay} · LA TAPPA DI OGGI`}</span><h2>${escape(active.title)}</h2><p>${escape(active.goal)}</p><div class="challenge-phrase"><small>ASCOLTA E RIPETI</small><strong>${escape(active.phrase)}</strong><span>${escape(active.meaning)}</span><button class="listen-button" data-action="challenge-speak" aria-label="Ascolta la frase del giorno">${icon('sound')} ASCOLTA</button></div><div class="challenge-actions"><button class="primary" data-action="challenge-start" data-day="${nextDay}" ${waiting ? 'disabled' : ''}>${waiting ? 'TORNA DOMANI' : 'INIZIA LA LEZIONE'}</button><button class="auth-switch" data-action="challenge-print" data-day="${nextDay}">STAMPA LA SCHEDA</button></div></section>` : `<section class="content-card challenge-current"><span class="eyebrow">TRAGUARDO RAGGIUNTO</span><h2>Hai completato gli otto giorni!</h2><p>Ripassa dal percorso o continua con le altre lezioni di inglese generale.</p></section>`}<section class="challenge-grid" aria-label="Le otto tappe">${challengeDays
+    `<section class="content-card challenge-overview"><div class="panel-heading"><h2>La tua 8 Days Challenge</h2><span class="badge">${complete} / 8 COMPLETATI</span></div><div class="progress-track" role="progressbar" aria-label="Avanzamento 8 Days Challenge" aria-valuenow="${complete}" aria-valuemin="0" aria-valuemax="8"><div class="progress-fill" style="width:${(complete / 8) * 100}%"></div></div><p>Ogni tappa propone cinque frasi originali: ascolta l’italiano, prova a tradurre durante la pausa, ascolta l’inglese e ripeti. Poi verifica quello che hai imparato con quattro esercizi sulle stesse frasi. Completa un giorno alla volta.</p></section>${active ? `<section class="content-card challenge-current"><span class="eyebrow">${waiting ? 'PROSSIMA TAPPA · DOMANI' : `GIORNO ${nextDay} · LA TAPPA DI OGGI`}</span><h2>${escape(active.title)}</h2><p>${escape(active.goal)}</p>${waiting ? '<p>La prossima lezione si apre domani. Puoi ripassare le frasi dei giorni completati qui sotto.</p>' : tutorCard(active)}<div class="challenge-actions"><button class="primary" data-action="challenge-start" data-day="${nextDay}" ${waiting || (state.challengePractice[nextDay] || []).length !== active.phrases.length ? 'disabled' : ''}>${waiting ? 'TORNA DOMANI' : (state.challengePractice[nextDay] || []).length === active.phrases.length ? 'INIZIA LA LEZIONE' : 'COMPLETA PRIMA LE FRASI'}</button><button class="auth-switch" data-action="challenge-print" data-day="${nextDay}">STAMPA LA SCHEDA</button></div></section>` : `<section class="content-card challenge-current"><span class="eyebrow">TRAGUARDO RAGGIUNTO</span><h2>Hai completato gli otto giorni!</h2><p>Ripassa dal percorso o continua con le altre lezioni di inglese generale.</p></section>`}<section class="challenge-grid" aria-label="Le otto tappe">${challengeDays
       .map((day) => {
         const done = state.challengeDays.includes(day.day)
         const isNext = day.day === nextDay
-        return `<article class="content-card challenge-day ${done ? 'completed' : isNext && !waiting ? 'available' : ''}"><span class="challenge-day-number">${done ? '✓' : String(day.day).padStart(2, '0')}</span><div><small>GIORNO ${day.day}</small><h3>${escape(day.title)}</h3><p>${escape(day.goal)}</p></div><span class="badge">${done ? 'COMPLETATO' : isNext ? (waiting ? 'DOMANI' : 'OGGI') : 'BLOCCATO'}</span></article>`
+        return `<article class="content-card challenge-day ${done ? 'completed' : isNext && !waiting ? 'available' : ''}"><span class="challenge-day-number">${done ? '✓' : String(day.day).padStart(2, '0')}</span><div><small>GIORNO ${day.day}</small><h3>${escape(day.title)}</h3><p>${escape(day.goal)}</p></div><span class="badge">${done ? 'COMPLETATO' : isNext ? (waiting ? 'DOMANI' : 'OGGI') : 'BLOCCATO'}</span>${done ? `<button class="auth-switch" data-action="tutor-review" data-day="${day.day}">RIPASSA LE FRASI</button>` : ''}</article>`
       })
       .join(
         '',
-      )}</section><section class="content-card challenge-note"><h2>Materiali e sessioni</h2><p>Luma offre esercizi originali, ascolto tramite sintesi vocale e una scheda giornaliera stampabile. Video-corsi, PDF originali, lezioni live e supporto di tutor di Learnworlds non fanno parte di questa app.</p></section><section class="challenge-print-sheet" id="challenge-print-sheet"><p class="eyebrow">LUMA · SCHEDA GIORNALIERA</p><h1 id="challenge-print-title"></h1><p id="challenge-print-goal"></p><h2 id="challenge-print-phrase"></h2><p id="challenge-print-meaning"></p><p>Ascolta la frase, ripetila ad alta voce e completa la lezione del giorno.</p></section>`
+      )}</section><section class="content-card challenge-note"><h2>Materiali e sessioni</h2><p>Luma offre esercizi originali, ascolto tramite sintesi vocale e una scheda giornaliera stampabile. Video-corsi, PDF originali, lezioni live e supporto di tutor di Learnworlds non fanno parte di questa app.</p></section>${googlePracticeCard()}<section class="challenge-print-sheet" id="challenge-print-sheet"><p class="eyebrow">LUMA · SCHEDA GIORNALIERA</p><h1 id="challenge-print-title"></h1><p id="challenge-print-goal"></p><h2 id="challenge-print-phrase"></h2><p id="challenge-print-meaning"></p><p>Ascolta la frase, ripetila ad alta voce e completa la lezione del giorno.</p></section>`
+}
+function googlePracticeCard() {
+  return `<section class="content-card google-practice"><h2>Google Traduttore e Fai pratica</h2><p>Usa il traduttore come supporto alle frasi del giorno. Si apre una pagina Google separata quando premi il pulsante.</p><form action="https://translate.google.com/" method="get" target="_blank" rel="noopener noreferrer"><input type="hidden" name="sl" value="auto"><input type="hidden" name="op" value="translate"><label for="google-translation-text">Frase da tradurre</label><textarea id="google-translation-text" name="text" maxlength="500" required placeholder="Scrivi una frase da approfondire…"></textarea><label for="google-translation-language">Traduci in</label><select id="google-translation-language" name="tl"><option value="en">Inglese</option><option value="it">Italiano</option></select><button class="secondary" type="submit">TRADUCI CON GOOGLE</button></form><h3>Conversazione e ascolto con Fai pratica (Beta)</h3><p>Nell’app Google Traduttore sul telefono: apri <strong>Fai pratica</strong>, scegli italiano per le istruzioni, inglese da imparare, il tuo livello e uno scenario legato alla lezione di oggi. La disponibilità dipende dall’app, dall’account e dalla regione.</p><a class="auth-switch" href="https://support.google.com/translate/answer/16475590?hl=it" target="_blank" rel="noopener noreferrer">ISTRUZIONI UFFICIALI DI GOOGLE</a><p class="muted">Questa funzione appartiene a Google e si usa nella sua app. I suoi risultati e progressi non vengono sincronizzati con Luma; Luma non invia il profilo o i progressi a Google.</p></section>`
+}
+function renderTranslator() {
+  content.innerHTML =
+    header(
+      'STRUMENTI DI SUPPORTO',
+      'Approfondisci una frase.',
+      'Traduzione e pratica aggiuntiva per accompagnare il tuo percorso Luma.',
+    ) + googlePracticeCard()
 }
 function renderShop() {
   content.innerHTML =
@@ -628,6 +682,7 @@ function render() {
       learn: renderLearn,
       challenge: renderChallenge,
       practice: renderPractice,
+      translate: renderTranslator,
       sounds: renderSounds,
       quests: renderQuests,
       ranking: renderRanking,
@@ -639,6 +694,7 @@ function render() {
   )()
 }
 function navigate() {
+  tutor.stop()
   view = Object.hasOwn(destinations, location.hash.slice(1))
     ? location.hash.slice(1)
     : location.hash === '#chess'
@@ -656,6 +712,7 @@ function info(title, body) {
   infoDialog.showModal()
 }
 function speak(text) {
+  tutor.stop()
   if (!('speechSynthesis' in window)) {
     notify('Sintesi vocale non disponibile in questo browser.')
     return false
@@ -678,6 +735,7 @@ function speak(text) {
   return true
 }
 function startLesson(id, practice = false, config = {}) {
+  tutor.stop()
   const unlocked =
     state.completed.includes(id) || id === nextLesson(state) || practice
   if (!unlocked) return
@@ -691,7 +749,7 @@ function startLesson(id, practice = false, config = {}) {
     correct: 0,
     listening: 0,
     finished: false,
-    questions: config.questions || lessons[id].questions,
+    questions: [...(config.questions || lessons[id].questions)],
     title: config.title || lessons[id].title,
     chapter: config.chapter ?? lessons[id].chapter,
     extraId: config.extraId || null,
@@ -825,6 +883,13 @@ function check() {
   if (correct) {
     session.correct++
     if (q.type === 'listen') session.listening++
+  }
+  if (!correct && session.challengeDay && !q.retry) {
+    session.questions.push({
+      ...q,
+      retry: true,
+      prompt: `Ripasso mirato · ${q.prompt}`,
+    })
   }
   const fb = lessonDialog.querySelector('.feedback')
   fb.classList.toggle('error', !correct)
@@ -1019,6 +1084,8 @@ document.addEventListener('click', async (event) => {
   }
   switch (b.dataset.action) {
     case 'logout':
+      tutor.stop()
+      tutorIndex = 0
       clearTimeout(syncTimer)
       if (player) await saveProgress(player.id, state).catch(() => {})
       signOutAccount()
@@ -1027,9 +1094,75 @@ document.addEventListener('click', async (event) => {
       document.querySelector('[data-view="admin"]')?.remove()
       showAuth()
       break
-    case 'challenge-speak': {
-      const day = challengeDays[state.challengeDays.length]
-      if (day) speak(day.phrase)
+    case 'tutor-review': {
+      const day = challengeDays[Number(b.dataset.day) - 1]
+      if (!day || !state.challengeDays.includes(day.day)) break
+      tutor.stop()
+      tutorIndex = 0
+      info(`Ripasso · Giorno ${day.day}`, tutorCard(day))
+      break
+    }
+    case 'tutor-play':
+    case 'tutor-english':
+    case 'tutor-slow': {
+      const day = challengeDays[tutorDayNumber - 1]
+      const pauseSeconds = Number(
+        tutorRoot().querySelector('[data-tutor-pause]').value,
+      )
+      tutor.play(day.phrases[tutorIndex], {
+        pauseSeconds,
+        englishOnly: b.dataset.action !== 'tutor-play',
+        slow: b.dataset.action === 'tutor-slow',
+      })
+      break
+    }
+    case 'tutor-stop':
+      tutor.stop()
+      updateTutorStage('ready')
+      break
+    case 'tutor-reveal':
+      tutor.stop()
+      updateTutorStage('revealed')
+      break
+    case 'tutor-previous':
+    case 'tutor-next': {
+      const day = challengeDays[tutorDayNumber - 1]
+      tutor.stop()
+      tutorIndex = Math.min(
+        day.phrases.length - 1,
+        Math.max(0, tutorIndex + (b.dataset.action === 'tutor-next' ? 1 : -1)),
+      )
+      tutorRoot().outerHTML = tutorCard(day)
+      tutorRoot().querySelector('[data-action="tutor-play"]').focus()
+      break
+    }
+    case 'tutor-confirm': {
+      const day = challengeDays[tutorDayNumber - 1]
+      const practised = state.challengePractice[day.day] || []
+      if (!practised.includes(tutorIndex)) {
+        state.challengePractice[day.day] = [...practised, tutorIndex]
+        save()
+      }
+      tutor.stop()
+      tutorIndex = Math.min(day.phrases.length - 1, tutorIndex + 1)
+      tutorRoot().outerHTML = tutorCard(day)
+      const ready =
+        state.challengePractice[day.day].length === day.phrases.length
+      const quiz = content.querySelector('[data-action="challenge-start"]')
+      if (
+        ready &&
+        quiz &&
+        Number(quiz.dataset.day) === day.day &&
+        state.challengeLastDate !== dayKey()
+      ) {
+        quiz.disabled = false
+        quiz.textContent = 'INIZIA LA LEZIONE'
+      }
+      tutorRoot().querySelector('[data-action="tutor-play"]').focus()
+      if (ready)
+        notify(
+          'Pratica completata. Ora puoi verificare le stesse frasi nella lezione.',
+        )
       break
     }
     case 'challenge-start': {
@@ -1038,7 +1171,8 @@ document.addEventListener('click', async (event) => {
       if (
         dayNumber !== state.challengeDays.length + 1 ||
         state.challengeLastDate === dayKey() ||
-        !day
+        !day ||
+        (state.challengePractice[dayNumber] || []).length !== day.phrases.length
       ) {
         notify('La prossima tappa sarà disponibile domani.')
         return
@@ -1057,9 +1191,12 @@ document.addEventListener('click', async (event) => {
       document.querySelector('#challenge-print-title').textContent =
         `Giorno ${day.day} · ${day.title}`
       document.querySelector('#challenge-print-goal').textContent = day.goal
-      document.querySelector('#challenge-print-phrase').textContent = day.phrase
+      document.querySelector('#challenge-print-phrase').textContent =
+        'Le cinque frasi del giorno'
       document.querySelector('#challenge-print-meaning').textContent =
-        day.meaning
+        day.phrases
+          .map((pair) => `${pair.meaning}\n${pair.phrase}`)
+          .join('\n\n')
       document.body.classList.add('challenge-printing')
       window.print()
       setTimeout(
@@ -1183,6 +1320,11 @@ lessonDialog.addEventListener('cancel', () => {
   session = null
   if ('speechSynthesis' in window) speechSynthesis.cancel()
 })
+infoDialog.addEventListener('close', () => {
+  tutor.stop()
+  if (player?.approval_status === 'approved' && view === 'challenge')
+    renderChallenge()
+})
 document.addEventListener('keydown', (e) => {
   if (!lessonDialog.open || !session || session.finished) return
   if (e.key === 'Enter') {
@@ -1196,6 +1338,7 @@ document.addEventListener('keydown', (e) => {
   }
 })
 document.addEventListener('visibilitychange', () => {
+  tutor.stop()
   if (!document.hidden) render()
 })
 initializeAuth().then(() => {

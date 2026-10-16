@@ -1,11 +1,12 @@
-param([Parameter(Mandatory=$true)][string]$WheelPath,[string]$ResultPath,[string]$AdminEmail='admin@luma.local')
+param([Parameter(Mandatory=$true)][string]$WheelPath,[string]$ResultPath,[string]$AdminEmail='admin@luma.local',[PSCredential]$ServerCredential)
 $ErrorActionPreference='Stop'
 $project=Split-Path -Parent $PSScriptRoot
 $release=Get-Date -Format 'yyyyMMdd-HHmmss'
 $credential=$null;$session=$null;$driveCreated=$false
 try {
     if((Split-Path -Leaf $WheelPath) -notlike 'waitress-3.0.2-*.whl' -or -not (Test-Path -LiteralPath $WheelPath)){throw 'Provide the pinned Waitress 3.0.2 wheel.'}
-    $credential=Get-Credential -UserName '192.168.196.176\administrator' -Message 'Luma: installazione isolata sul server .176. Nessuna modifica a Bybit.'
+    $credential=$ServerCredential
+    if(-not $credential){$credential=Get-Credential -UserName '192.168.196.176\administrator' -Message 'Luma: installazione isolata sul server .176. Nessuna modifica a Bybit.'}
     if(-not $credential){throw 'Server authentication cancelled.'}
     $session=New-CimSession -ComputerName '192.168.196.176' -Credential $credential -SessionOption (New-CimSessionOption -Protocol Dcom)
     New-PSDrive -Name LumaDeploy176 -PSProvider FileSystem -Root '\\192.168.196.176\C$' -Credential $credential | Out-Null

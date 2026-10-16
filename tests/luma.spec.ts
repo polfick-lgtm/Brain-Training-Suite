@@ -31,11 +31,21 @@ test('an approved player can complete and sync the first challenge day', async (
         LUMA_CONFIG: { apiBaseUrl: string }
       }
     ).LUMA_CONFIG = {
-      apiBaseUrl: 'https://api.luma.test',
+      apiBaseUrl: 'https://luma-e2e.ngrok-free.dev',
     }
     window.print = () => {}
+    Object.defineProperty(window, 'speechSynthesis', {
+      value: {
+        cancel() {},
+        getVoices: () => [],
+        speak(utterance: SpeechSynthesisUtterance) {
+          setTimeout(() => utterance.dispatchEvent(new Event('end')), 10)
+        },
+      },
+    })
   })
-  await page.route('https://api.luma.test/**', async (route) => {
+  await page.route('https://luma-e2e.ngrok-free.dev/**', async (route) => {
+    expect(route.request().headers()['ngrok-skip-browser-warning']).toBe('1')
     const url = route.request().url()
     if (url.includes('/api/auth/login')) {
       await route.fulfill({
@@ -77,24 +87,85 @@ test('an approved player can complete and sync the first challenge day', async (
     0,
   )
   await page.getByRole('link', { name: '8 Giorni' }).click()
+  await expect(page.locator('[data-tutor-answer]')).toBeHidden()
+  await page.getByLabel('Pausa per tradurre').selectOption('3')
+  await page.getByRole('button', { name: 'ASCOLTA IL TUTOR' }).click()
+  await expect(page.locator('[data-tutor-status]')).toContainText(
+    'prova a dirla in inglese',
+  )
+  await expect(page.locator('[data-tutor-answer]')).toBeHidden()
+  await expect(page.locator('[data-tutor-answer]')).toBeVisible({
+    timeout: 6000,
+  })
+  await expect(page.locator('[data-tutor-status]')).toContainText(
+    'ripeti ad alta voce',
+  )
+  const translationLink = page.getByRole('link', {
+    name: 'APRI QUESTA FRASE IN GOOGLE TRADUTTORE',
+  })
+  expect(
+    new URL((await translationLink.getAttribute('href'))!).searchParams.get(
+      'text',
+    ),
+  ).toBe('Buongiorno, mi chiamo Anna.')
+  await expect(translationLink).toHaveAttribute('rel', 'noopener noreferrer')
+  if (process.env.LUMA_SCREENSHOT_PATH)
+    await page.locator('.challenge-current').screenshot({
+      path: process.env.LUMA_SCREENSHOT_PATH,
+    })
+  const originalViewport = page.viewportSize()!
+  await page.setViewportSize({ width: 390, height: 844 })
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true)
+  if (process.env.LUMA_SCREENSHOT_PATH)
+    await page
+      .locator('.challenge-current')
+      .screenshot({
+        path: process.env.LUMA_SCREENSHOT_PATH.replace('.png', '-mobile.png'),
+      })
+  await page.setViewportSize(originalViewport)
+  await expect(
+    page.getByRole('button', { name: 'COMPLETA PRIMA LE FRASI' }),
+  ).toBeDisabled()
+  for (let phrase = 0; phrase < 5; phrase++) {
+    await page.locator('[data-action="tutor-confirm"]').click()
+  }
   await page.getByRole('button', { name: 'INIZIA LA LEZIONE' }).click()
 
   const dialog = page.locator('#lesson-dialog')
-  await dialog.locator('[data-option]').filter({ hasText: 'Hello' }).click()
+  await dialog
+    .locator('[data-option]')
+    .filter({ hasText: 'I speak a little English.' })
+    .click()
   await dialog.locator('[data-action="check"]').click()
   await dialog.locator('[data-action="next"]').click()
-  for (const word of ['I', 'am', 'Anna']) {
+  for (const word of ['My', 'name', 'is', 'Anna.']) {
     await dialog.locator('[data-word]').filter({ hasText: word }).click()
   }
   await dialog.locator('[data-action="check"]').click()
   await dialog.locator('[data-action="next"]').click()
   await dialog
     .locator('[data-option]')
-    .filter({ hasText: 'Buongiorno' })
+    .filter({ hasText: 'Vengo dall’Italia.' })
     .click()
   await dialog.locator('[data-action="check"]').click()
   await dialog.locator('[data-action="next"]').click()
-  await dialog.locator('[data-option]').filter({ hasText: 'meet' }).click()
+  await dialog
+    .locator('[data-option]')
+    .filter({ hasText: 'Nice to meet you.' })
+    .click()
+  await dialog.locator('[data-action="check"]').click()
+  await dialog.locator('[data-action="next"]').click()
+  await expect(
+    dialog.getByRole('heading', { name: /Ripasso mirato/ }),
+  ).toBeVisible()
+  await dialog
+    .locator('[data-option]')
+    .filter({ hasText: 'Good morning, my name is Anna.' })
+    .click()
   await dialog.locator('[data-action="check"]').click()
   await dialog.locator('[data-action="next"]').click()
   await dialog.getByRole('button', { name: 'TORNA AL PERCORSO' }).click()
@@ -104,6 +175,14 @@ test('an approved player can complete and sync the first challenge day', async (
     page.getByRole('button', { name: 'TORNA DOMANI' }),
   ).toBeDisabled()
   await expect.poll(() => progressSynced).toBe(true)
+  await page.getByRole('button', { name: 'RIPASSA LE FRASI' }).click()
+  await expect(page.locator('#info-dialog .tutor-card')).toBeVisible()
+  await page.getByRole('button', { name: 'Chiudi', exact: true }).click()
+  await page.getByRole('link', { name: 'Traduttore', exact: true }).click()
+  await expect(
+    page.locator('form[action="https://translate.google.com/"]'),
+  ).toHaveAttribute('target', '_blank')
+  await expect(page.getByLabel('Frase da tradurre')).toBeVisible()
 })
 
 test('administrator reviews requests and approves a player from the private area', async ({

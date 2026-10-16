@@ -11,7 +11,12 @@ test('the challenge contains eight guided lessons with four exercises each', () 
   assert.equal(challengeDays.length, 8)
   assert.ok(
     challengeDays.every(
-      (day) => day.questions.length === 4 && day.phrase && day.meaning,
+      (day) =>
+        day.questions.length === 4 &&
+        day.phrase &&
+        day.meaning &&
+        day.phrases.length === 5 &&
+        day.phrases.every((pair) => pair.phrase && pair.meaning),
     ),
   )
 })
@@ -62,4 +67,8 @@ test('challenge state survives export and hydration', () => {
   const restored = hydrate(JSON.stringify(state))
   assert.deepEqual(restored.challengeDays, [1])
   assert.equal(restored.challengeLastDate, '2026-10-16')
+  state.challengePractice = { 2: [0, 1, 1, 99, -1], 99: [0] }
+  const resumed = hydrate(JSON.stringify(state))
+  assert.deepEqual(resumed.challengePractice[2], [0, 1])
+  assert.equal(resumed.challengePractice[99], undefined)
 })
