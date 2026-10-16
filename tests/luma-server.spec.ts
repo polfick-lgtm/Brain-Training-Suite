@@ -153,7 +153,15 @@ test('real API registration, admin approval, learning sync and session revocatio
   const other = await otherContext.newPage()
   await configure(other)
   await other.goto('./luma/index.html')
+  const progressLoaded = other.waitForResponse(
+    (response) =>
+      response.url().endsWith('/api/progress') &&
+      response.request().method() === 'GET' &&
+      response.ok(),
+  )
   await login(other, 'player@example.test')
+  const remoteProgress = await (await progressLoaded).json()
+  expect(remoteProgress.progress.challengeDays).toEqual([1])
   await other.getByRole('link', { name: '8 Giorni' }).click()
   await expect(other.getByText('1 / 8 COMPLETATI')).toBeVisible()
 
