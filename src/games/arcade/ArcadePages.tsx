@@ -111,7 +111,7 @@ function useKeys(
         event.preventDefault()
         // Hard-drop / fire must not repeat: OS keydown auto-repeat would
         // lock pieces (or spam fire) while Space is held.
-        if (event.repeat && direction === 'fire') return
+        if (event.repeat && event.code === 'Space') return
         actionRef.current(direction)
       }
     }

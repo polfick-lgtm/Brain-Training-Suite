@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#098675" />
+    <meta
+      name="description"
+      content="Un piccolo passo ogni giorno. Impara l’inglese con Luma."
+    />
+    <title>Luma — Il tuo inglese, un passo alla volta</title>
+    <link rel="icon" type="image/svg+xml" href="mascot.svg" />
+    <link rel="stylesheet" href="style.css" />
+    <script type="module" src="app.mjs"></script>
+  </head>
+  <body>
+    <a class="skip" href="#content">Vai al contenuto</a>
+    <aside class="sidebar">
+      <a class="brand" href="#learn" aria-label="Luma, vai al percorso"
+        ><img src="mascot.svg" alt="" width="42" height="42" />luma<span
+          >•</span
+        ></a
+      >
+      <p class="brand-caption">PICCOLI PASSI. GRANDI MONDI.</p>
+      <nav aria-label="Navigazione principale" id="navigation"></nav>
+      <div class="more-menu" id="more-menu" hidden></div>
+      <section class="chess-card">
+        <div class="chess-art" aria-hidden="true">♞ ♟</div>
+        <h2>La prossima mossa è tua.</h2>
+        <p>Una sfida di logica per cambiare prospettiva.</p>
+        <a href="#chess" class="link-button">SCOPRI LA SFIDA</a>
+      </section>
+      <div class="sidebar-bottom">
+        <div class="local-dot"></div>
+        Il tuo spazio per imparare
+        <p>Progressi salvati su questo browser</p>
+      </div>
+    </aside>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="course">
+          <button
+            class="course-choice"
+            data-action="course-choice"
+            aria-label="Seleziona il corso di inglese"
+          >
+            <span class="flag" aria-hidden="true">🇬🇧</span
+            ><span class="course-chevron">⌄</span>
+          </button>
+          <div>
+            <small>IL TUO CORSO</small
+            ><strong>Inglese <span class="level">A1</span></strong>
+          </div>
+        </div>
+        <div class="stats" id="stats"></div>
+      </header>
+      <div class="workspace">
+        <main id="content" tabindex="-1"></main>
+        <aside
+          class="rightbar"
+          id="rightbar"
+          aria-label="I tuoi obiettivi"
+        ></aside>
+      </div>
+    </div>
+    <dialog id="lesson-dialog" aria-label="Lezione di inglese"></dialog>
+    <dialog id="info-dialog" aria-labelledby="info-title"></dialog>
+    <div id="toast" role="status"></div>
+  </body>
+</html>
