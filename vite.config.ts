@@ -8,6 +8,9 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'prompt',
+      workbox: {
+        navigateFallbackDenylist: [/^\/Brain-Training-Suite\/luma\//],
+      },
       includeAssets: ['favicon.svg'],
       manifest: {
         name: 'Brain Training Suite',
