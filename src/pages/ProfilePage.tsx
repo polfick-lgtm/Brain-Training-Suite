@@ -3,16 +3,36 @@ import { ShieldCheck } from 'lucide-react'
 import { useTrainingStore } from '../storage/useTrainingStore'
 
 export function ProfilePage() {
+  const hydrated = useTrainingStore((state) => state.hydrated)
+  return hydrated ? (
+    <ProfileForm />
+  ) : (
+    <p role="status">Caricamento del profilo…</p>
+  )
+}
+
+function ProfileForm() {
   const store = useTrainingStore()
   const [name, setName] = useState(store.profile.displayName)
   const [level, setLevel] = useState(store.profile.preferredLevel)
   const [goal, setGoal] = useState(store.profile.goal)
   const [saved, setSaved] = useState(false)
-  function submit(e: FormEvent) {
+  const [saving, setSaving] = useState(false)
+  const [failed, setFailed] = useState(false)
+  async function submit(e: FormEvent) {
     e.preventDefault()
-    store.setProfile(name.trim(), level, goal)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    setSaving(true)
+    setSaved(false)
+    setFailed(false)
+    try {
+      await store.setProfile(name.trim(), level, goal)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch {
+      setFailed(true)
+    } finally {
+      setSaving(false)
+    }
   }
   return (
     <>
@@ -61,10 +81,11 @@ export function ProfilePage() {
             ))}
           </select>
         </label>
-        <button className="button primary" type="submit">
-          Salva profilo
+        <button className="button primary" type="submit" disabled={saving}>
+          {saving ? 'Salvataggio…' : 'Salva profilo'}
         </button>
         {saved && <span className="success">Profilo salvato.</span>}
+        {failed && <p role="alert">Salvataggio non riuscito. Riprova.</p>}
       </form>
       <section className="privacy-card">
         <ShieldCheck size={30} />
