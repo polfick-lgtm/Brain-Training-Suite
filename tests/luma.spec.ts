@@ -121,11 +121,9 @@ test('an approved player can complete and sync the first challenge day', async (
     ),
   ).toBe(true)
   if (process.env.LUMA_SCREENSHOT_PATH)
-    await page
-      .locator('.challenge-current')
-      .screenshot({
-        path: process.env.LUMA_SCREENSHOT_PATH.replace('.png', '-mobile.png'),
-      })
+    await page.locator('.challenge-current').screenshot({
+      path: process.env.LUMA_SCREENSHOT_PATH.replace('.png', '-mobile.png'),
+    })
   await page.setViewportSize(originalViewport)
   await expect(
     page.getByRole('button', { name: 'COMPLETA PRIMA LE FRASI' }),
