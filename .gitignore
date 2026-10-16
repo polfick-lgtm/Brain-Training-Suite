@@ -11,3 +11,10 @@ test-results
 Thumbs.db
 *.local
 *.tsbuildinfo
+__pycache__/
+*.pyc
+*.sqlite3
+*.sqlite3-*
+server/config.json
+server/bootstrap-admin.json
+server/data/
