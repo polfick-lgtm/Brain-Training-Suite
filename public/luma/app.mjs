@@ -594,8 +594,9 @@ function renderChallenge() {
     `<section class="content-card challenge-overview"><div class="panel-heading"><h2>La tua 8 Days Challenge</h2><span class="badge">${complete} / 8 COMPLETATI</span></div><div class="progress-track" role="progressbar" aria-label="Avanzamento 8 Days Challenge" aria-valuenow="${complete}" aria-valuemin="0" aria-valuemax="8"><div class="progress-fill" style="width:${(complete / 8) * 100}%"></div></div><p>Ogni tappa propone cinque frasi originali: ascolta l’italiano, prova a tradurre durante la pausa, ascolta l’inglese e ripeti. Poi verifica quello che hai imparato con quattro esercizi sulle stesse frasi. Completa un giorno alla volta.</p></section>${active ? `<section class="content-card challenge-current"><span class="eyebrow">${waiting ? 'PROSSIMA TAPPA · DOMANI' : `GIORNO ${nextDay} · LA TAPPA DI OGGI`}</span><h2>${escape(active.title)}</h2><p>${escape(active.goal)}</p>${waiting ? '<p>La prossima lezione si apre domani. Puoi ripassare le frasi dei giorni completati qui sotto.</p>' : tutorCard(active)}<div class="challenge-actions"><button class="primary" data-action="challenge-start" data-day="${nextDay}" ${waiting || (state.challengePractice[nextDay] || []).length !== active.phrases.length ? 'disabled' : ''}>${waiting ? 'TORNA DOMANI' : (state.challengePractice[nextDay] || []).length === active.phrases.length ? 'INIZIA LA LEZIONE' : 'COMPLETA PRIMA LE FRASI'}</button><button class="auth-switch" data-action="challenge-print" data-day="${nextDay}">STAMPA LA SCHEDA</button></div></section>` : `<section class="content-card challenge-current"><span class="eyebrow">TRAGUARDO RAGGIUNTO</span><h2>Hai completato gli otto giorni!</h2><p>Ripassa dal percorso o continua con le altre lezioni di inglese generale.</p></section>`}<section class="challenge-grid" aria-label="Le otto tappe">${challengeDays
       .map((day) => {
         const done = state.challengeDays.includes(day.day)
+        const reviewCount = state.challengeReview[day.day]?.length || 0
         const isNext = day.day === nextDay
-        return `<article class="content-card challenge-day ${done ? 'completed' : isNext && !waiting ? 'available' : ''}"><span class="challenge-day-number">${done ? '✓' : String(day.day).padStart(2, '0')}</span><div><small>GIORNO ${day.day}</small><h3>${escape(day.title)}</h3><p>${escape(day.goal)}</p></div><span class="badge">${done ? 'COMPLETATO' : isNext ? (waiting ? 'DOMANI' : 'OGGI') : 'BLOCCATO'}</span>${done ? `<button class="auth-switch" data-action="tutor-review" data-day="${day.day}">RIPASSA LE FRASI</button>` : ''}</article>`
+        return `<article class="content-card challenge-day ${done ? 'completed' : isNext && !waiting ? 'available' : ''}"><span class="challenge-day-number">${done ? '✓' : String(day.day).padStart(2, '0')}</span><div><small>GIORNO ${day.day}</small><h3>${escape(day.title)}</h3><p>${escape(day.goal)}</p></div><span class="badge">${done ? 'COMPLETATO' : isNext ? (waiting ? 'DOMANI' : 'OGGI') : 'BLOCCATO'}</span>${done ? `<button class="auth-switch" data-action="tutor-review" data-day="${day.day}">${reviewCount ? `RIPASSO MIRATO · ${reviewCount}` : 'RIPASSA TUTTE LE FRASI'}</button>` : ''}</article>`
       })
       .join(
         '',
@@ -747,6 +748,7 @@ function startLesson(id, practice = false, config = {}) {
     selected: [],
     checked: false,
     correct: 0,
+    missedPhrases: [],
     listening: 0,
     finished: false,
     questions: [...(config.questions || lessons[id].questions)],
@@ -884,6 +886,8 @@ function check() {
     session.correct++
     if (q.type === 'listen') session.listening++
   }
+  if (!correct && session.challengeDay && Number.isInteger(q.phraseIndex))
+    session.missedPhrases.push(q.phraseIndex)
   if (!correct && session.challengeDay && !q.retry) {
     session.questions.push({
       ...q,
@@ -935,6 +939,7 @@ function finish() {
       correct: session.correct,
       total,
       listening: session.listening,
+      missedPhrases: session.missedPhrases,
     })
   } else if (session.extraId) {
     result = completeExtra(state, session.extraId, {
@@ -1099,7 +1104,16 @@ document.addEventListener('click', async (event) => {
       if (!day || !state.challengeDays.includes(day.day)) break
       tutor.stop()
       tutorIndex = 0
-      info(`Ripasso · Giorno ${day.day}`, tutorCard(day))
+      const missed = state.challengeReview[day.day] || []
+      const pairs = missed.length
+        ? missed.map((index) => day.phrases[index]).filter(Boolean)
+        : day.phrases
+      const reviewDay = { ...day, phrases: pairs }
+      tutorDayNumber = day.day
+      info(
+        `Ripasso · Giorno ${day.day}`,
+        `${missed.length ? `<p class="badge">RIPASSO MIRATO · ${missed.length} ${missed.length === 1 ? 'FRASE' : 'FRASI'}</p><p>Ripartiamo dalle frasi che nel quiz hanno richiesto più attenzione.</p>` : '<p>Nel quiz non hai sbagliato frasi. Puoi comunque ripassare tutto il giorno.</p>'}${tutorCard(reviewDay)}`,
+      )
       break
     }
     case 'tutor-play':

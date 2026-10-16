@@ -480,6 +480,7 @@ export function initialState() {
     purchases: [],
     challengeDays: [],
     challengePractice: {},
+    challengeReview: {},
     challengeLastDate: null,
   }
 }
@@ -562,6 +563,21 @@ export function hydrate(raw) {
             ...new Set(
               (Array.isArray(v.challengePractice?.[day])
                 ? v.challengePractice[day]
+                : []
+              ).filter(
+                (index) => Number.isInteger(index) && index >= 0 && index < 5,
+              ),
+            ),
+          ],
+        ]),
+      ),
+      challengeReview: Object.fromEntries(
+        Array.from({ length: 8 }, (_, i) => String(i + 1)).map((day) => [
+          day,
+          [
+            ...new Set(
+              (Array.isArray(v.challengeReview?.[day])
+                ? v.challengeReview[day]
                 : []
               ).filter(
                 (index) => Number.isInteger(index) && index >= 0 && index < 5,
@@ -711,7 +727,7 @@ export function completeExtra(
 export function completeChallengeDay(
   state,
   day,
-  { correct, total, listening = 0 },
+  { correct, total, listening = 0, missedPhrases = [] },
   now = new Date(),
 ) {
   if (
@@ -732,7 +748,11 @@ export function completeChallengeDay(
     correct < 0 ||
     correct > total ||
     !Number.isFinite(listening) ||
-    listening < 0
+    listening < 0 ||
+    !Array.isArray(missedPhrases) ||
+    missedPhrases.some(
+      (index) => !Number.isInteger(index) || index < 0 || index >= 5,
+    )
   )
     throw new Error('Risultato della sfida non valido.')
   const s = structuredClone(state)
@@ -740,6 +760,7 @@ export function completeChallengeDay(
   const gems = correct === total ? 3 : 1
   s.challengeDays.push(day)
   s.challengeLastDate = dayKey(now)
+  s.challengeReview[day] = [...new Set(missedPhrases)]
   s.xp += xp
   s.gems += gems
   studyDay(s, xp, now)
