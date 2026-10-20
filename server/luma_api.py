@@ -8,6 +8,7 @@ from dataclasses import dataclass
 import getpass
 import hashlib
 import hmac
+import ipaddress
 import json
 import logging
 from pathlib import Path
@@ -63,6 +64,7 @@ class Settings:
     database: Path
     allowed_origins: tuple[str, ...]
     session_hours: int = 168
+    trusted_proxy_addresses: tuple[str, ...] = ("127.0.0.1", "::1")
 
     def __post_init__(self):
         if not self.allowed_origins or any(
@@ -73,6 +75,31 @@ class Settings:
             raise ValueError("Configure explicit allowed origins without trailing slashes.")
         if not 1 <= self.session_hours <= 720:
             raise ValueError("session_hours must be between 1 and 720.")
+        try:
+            for address in self.trusted_proxy_addresses:
+                ipaddress.ip_address(address)
+        except ValueError as exc:
+            raise ValueError("trusted_proxy_addresses must contain valid IP addresses.") from exc
+
+    def client_address(self, environ) -> str:
+        peer = environ.get("REMOTE_ADDR", "unknown")
+        if peer not in self.trusted_proxy_addresses:
+            return peer
+
+        # The tunnel is the only trusted proxy. It appends the connecting
+        # client's address to X-Forwarded-For; never trust this header from
+        # requests that did not arrive from a configured proxy address.
+        forwarded = environ.get("HTTP_X_FORWARDED_FOR", "")
+        if not forwarded or len(forwarded) > 1024:
+            raise ApiError(400, "Indirizzo del client non disponibile dal proxy.")
+        candidates = [item.strip() for item in forwarded.split(",")]
+        if len(candidates) > 20:
+            raise ApiError(400, "Catena proxy non valida.")
+        try:
+            # ngrok appends the actual client after any client-supplied values.
+            return str(ipaddress.ip_address(candidates[-1]))
+        except ValueError:
+            raise ApiError(400, "Indirizzo del client non valido dal proxy.") from None
 
 
 class Store:
@@ -207,10 +234,10 @@ class Application:
     def route(self, env):
         path, method = env.get("PATH_INFO", ""), env["REQUEST_METHOD"]
         auth = env.get("HTTP_AUTHORIZATION", "")
-        address = digest(env.get("REMOTE_ADDR", "unknown"))
         if path == "/api/health" and method == "GET":
             return 200, {"status": "ok", "application": "luma", "schema": 1}
         if path == "/api/auth/register" and method == "POST":
+            address = digest(self.settings.client_address(env))
             self.store.limit("register:" + address, 5, 3600)
             body = self.read_json(env)
             email = email_address(body.get("email"))
@@ -228,6 +255,7 @@ class Application:
             # Same response for existing addresses; never replace their password or role.
             return 202, {"status": "pending"}
         if path == "/api/auth/login" and method == "POST":
+            address = digest(self.settings.client_address(env))
             self.store.limit("login-ip:" + address, 40, 900)
             body = self.read_json(env)
             email = email_address(body.get("email"))
@@ -333,7 +361,12 @@ def main():
     args = parser.parse_args()
     data = json.loads(args.config.read_text(encoding="utf-8-sig"))
     database = (args.config.parent / data["database"]).resolve()
-    settings = Settings(database, tuple(data["allowed_origins"]), data.get("session_hours", 168))
+    settings = Settings(
+        database,
+        tuple(data["allowed_origins"]),
+        data.get("session_hours", 168),
+        tuple(data.get("trusted_proxy_addresses", ("127.0.0.1", "::1"))),
+    )
     application = Application(settings)
     if args.create_admin:
         email = input("Administrator email: ").strip()

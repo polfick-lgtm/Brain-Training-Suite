@@ -17,7 +17,7 @@ class AccountApiTests(unittest.TestCase):
         self.password = "test-only-password-123"
         self.app.store.create_admin("admin@example.test", "Admin", password_hash(self.password))
 
-    def call(self, path, method="GET", data=None, token=None, origin="https://polfick-lgtm.github.io", raw=None, address="test-client"):
+    def call(self, path, method="GET", data=None, token=None, origin="https://polfick-lgtm.github.io", raw=None, address="127.0.0.1", forwarded_for="198.51.100.50"):
         body = raw if raw is not None else json.dumps(data or {}).encode()
         route, _, query = path.partition("?")
         env = {"REQUEST_METHOD": method, "PATH_INFO": route, "QUERY_STRING": query,
@@ -25,6 +25,8 @@ class AccountApiTests(unittest.TestCase):
                "wsgi.input": io.BytesIO(body), "REMOTE_ADDR": address, "HTTP_ORIGIN": origin}
         if token:
             env["HTTP_AUTHORIZATION"] = "Bearer " + token
+        if forwarded_for is not None:
+            env["HTTP_X_FORWARDED_FOR"] = forwarded_for
         result = {}
         def start(status, headers):
             result["status"] = int(status.split()[0])
@@ -136,6 +138,45 @@ class AccountApiTests(unittest.TestCase):
         with self.app.store.connect() as db:
             db.execute("UPDATE sessions SET expires_at=?", (int(time.time()) - 1,))
         self.assertEqual(self.call("/api/auth/me", token=token)["status"], 401)
+
+    def test_proxy_rate_limits_are_separated_by_forwarded_client_ip(self):
+        for index in range(40):
+            client_ip = "198.51.100.10" if index % 2 == 0 else "198.51.100.20"
+            email = f"unknown-{index % 4}@example.test"
+            result = self.call("/api/auth/login", "POST", {"email": email, "password": None},
+                               address="127.0.0.1", forwarded_for=f"{client_ip}")
+            self.assertEqual(result["status"], 401, result)
+
+        for index in range(40):
+            email = f"spoof-{index % 4}@example.test"
+            spoofed_prefix = f"192.0.2.{index + 1}"
+            result = self.call("/api/auth/login", "POST", {"email": email, "password": None},
+                               address="127.0.0.1", forwarded_for=f"{spoofed_prefix}, 198.51.100.30")
+            self.assertEqual(result["status"], 401, result)
+        blocked = self.call("/api/auth/login", "POST", {"email": "spoof-4@example.test", "password": None},
+                            address="127.0.0.1", forwarded_for="192.0.2.200, 198.51.100.30")
+        self.assertEqual(blocked["status"], 429)
+
+    def test_forwarded_ip_is_ignored_for_untrusted_peer_and_invalid_header(self):
+        for _ in range(5):
+            result = self.call("/api/auth/register", "POST", {}, address="203.0.113.10",
+                               forwarded_for="198.51.100.1")
+            self.assertEqual(result["status"], 400)
+        blocked = self.call("/api/auth/register", "POST", {}, address="203.0.113.10",
+                            forwarded_for="198.51.100.2")
+        self.assertEqual(blocked["status"], 429)
+
+        with self.app.store.connect() as db:
+            db.execute("DELETE FROM request_limits")
+        for _ in range(5):
+            result = self.call("/api/auth/register", "POST", {}, address="127.0.0.1",
+                               forwarded_for="not-an-ip")
+            self.assertEqual(result["status"], 400)
+        blocked = self.call("/api/auth/register", "POST", {}, address="127.0.0.1",
+                            forwarded_for="also-not-an-ip")
+        self.assertEqual(blocked["status"], 400)
+        missing = self.call("/api/auth/register", "POST", {}, address="127.0.0.1", forwarded_for=None)
+        self.assertEqual(missing["status"], 400)
 
     def test_bootstrap_cannot_reset_an_existing_administrator(self):
         with self.assertRaises(ValueError):

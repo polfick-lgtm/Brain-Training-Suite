@@ -3,5 +3,6 @@
   "port": 8796,
   "database": "../data/luma.sqlite3",
   "allowed_origins": ["https://polfick-lgtm.github.io"],
+  "trusted_proxy_addresses": ["127.0.0.1", "::1"],
   "session_hours": 168
 }
