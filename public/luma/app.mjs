@@ -12,6 +12,10 @@ import {
   weekActivity,
   dayKey,
   completeChallengeDay,
+  ASSESSMENT_PASS_RATIO,
+  chapterAssessmentQuestions,
+  canAssessChapter,
+  completeChapterAssessment,
 } from './model.mjs'
 import { challengeDays } from './challenge.mjs'
 import { PhraseTutor } from './tutor.mjs'
@@ -86,6 +90,7 @@ const content = document.querySelector('#content'),
   authGate = document.querySelector('#auth-gate')
 let tutorIndex = 0
 let tutorDayNumber = 1
+let selectedChallengeDay = null
 const tutor = new PhraseTutor({
   synthesis: window.speechSynthesis,
   Utterance: window.SpeechSynthesisUtterance,
@@ -451,13 +456,21 @@ function renderLearn() {
       extraDone(`legendary:${chapter}`),
     ),
   ].join('')
+  const assessment = state.chapterAssessments.find(
+    (entry) => entry.chapter === chapter,
+  )
+  const assessmentCard = canAssessChapter(state, chapter)
+    ? `<section class="content-card chapter-assessment"><h2>Conosci già questo capitolo?</h2><p>Dimostralo con una valutazione di 8 domande su tutte e quattro le lezioni: traduzione, composizione e ascolto. Con almeno 7 risposte corrette salti le lezioni rimanenti e avanzi. Puoi interrompere o riprovare senza perdere progressi.</p><button class="secondary" data-action="assessment-info" data-chapter-index="${chapter}">VALUTA E SALTA IL CAPITOLO</button></section>`
+    : assessment
+      ? `<section class="content-card chapter-assessment"><span class="badge">SUPERATO CON VALUTAZIONE</span><p>${assessment.correct} / ${assessment.total} risposte corrette. Le lezioni restano disponibili per il ripasso.</p></section>`
+      : ''
   content.innerHTML =
     header(
       'IL TUO PERCORSO · INGLESE A1',
       'Un passo alla volta.',
       'Impara, esercitati e scopri nuove tappe.',
     ) +
-    `<section class="chapter-banner"><div><small>SEZIONE 1 · CAPITOLO ${chapter + 1} DI ${chapters.length}</small><h2>${escape(c.title)}</h2></div><button class="guide-button" data-action="guide">${icon('book')} GUIDA</button></section>${selectedLocked ? '<div class="locked-note">Completa le tappe precedenti per continuare in questo capitolo.</div>' : ''}<div class="section-divider">${escape(c.tag)} · ${doneCount} DI 4 LEZIONI</div><div class="learning-path"><svg class="path-line" viewBox="0 0 480 900" preserveAspectRatio="none" aria-hidden="true"><path d="M240 32C240 90 125 110 165 178S350 226 300 304 195 360 240 430 355 498 300 575 180 632 240 705 340 776 240 850"/></svg>${nodes}<span class="mascot-note">Il gufo tifa per te!</span><img class="path-mascot" src="mascot.svg" alt="La mascotte Luma ti incoraggia"><div class="path-footer">${escape(c.subtitle)}</div></div><div class="chapter-next"><div><small>${chapter < chapters.length - 1 ? 'IL PROSSIMO CAPITOLO' : 'FINE DELLA SEZIONE'}</small><h3>${chapter < chapters.length - 1 ? escape(chapters[chapter + 1].title) : 'Complimenti, hai completato il corso!'}</h3></div>${icon(chapter < chapters.length - 1 ? 'lock' : 'trophy')}</div><div class="lesson-list"><h2 style="font-size:16px">La sezione A1</h2>${chapters
+    `<section class="chapter-banner"><div><small>SEZIONE 1 · CAPITOLO ${chapter + 1} DI ${chapters.length}</small><h2>${escape(c.title)}</h2></div><button class="guide-button" data-action="guide">${icon('book')} GUIDA</button></section>${assessmentCard}${selectedLocked ? '<div class="locked-note">Completa le tappe precedenti per continuare in questo capitolo.</div>' : ''}<div class="section-divider">${escape(c.tag)} · ${doneCount} DI 4 LEZIONI</div><div class="learning-path"><svg class="path-line" viewBox="0 0 480 900" preserveAspectRatio="none" aria-hidden="true"><path d="M240 32C240 90 125 110 165 178S350 226 300 304 195 360 240 430 355 498 300 575 180 632 240 705 340 776 240 850"/></svg>${nodes}<span class="mascot-note">Il gufo tifa per te!</span><img class="path-mascot" src="mascot.svg" alt="La mascotte Luma ti incoraggia"><div class="path-footer">${escape(c.subtitle)}</div></div><div class="chapter-next"><div><small>${chapter < chapters.length - 1 ? 'IL PROSSIMO CAPITOLO' : 'FINE DELLA SEZIONE'}</small><h3>${chapter < chapters.length - 1 ? escape(chapters[chapter + 1].title) : 'Complimenti, hai completato il corso!'}</h3></div>${icon(chapter < chapters.length - 1 ? 'lock' : 'trophy')}</div><div class="lesson-list"><h2 style="font-size:16px">La sezione A1</h2>${chapters
       .map((ch, i) => {
         const unlocked =
           i === 0 ||
@@ -574,7 +587,7 @@ function renderProfile() {
             .reverse()
             .map(
               (h) =>
-                `<p>${escape(h.date)} · ${escape(h.lesson == null ? { review: 'Ripasso', story: 'Storia', radio: 'Radio', legendary: 'Sfida leggendaria', chest: 'Forziere' }[h.kind] || 'Percorso' : lessons[h.lesson]?.title || 'Lezione')} · +${h.xp} XP${Number.isFinite(h.accuracy) ? ` · ${h.accuracy}%` : ''}</p>`,
+                `<p>${escape(h.date)} · ${escape(h.lesson == null ? { review: 'Ripasso', story: 'Storia', radio: 'Radio', legendary: 'Sfida leggendaria', chest: 'Forziere', assessment: 'Valutazione capitolo' }[h.kind] || 'Percorso' : lessons[h.lesson]?.title || 'Lezione')} · +${h.xp} XP${Number.isFinite(h.accuracy) ? ` · ${h.accuracy}%` : ''}</p>`,
             )
             .join('')
         : '<p>Il tuo viaggio comincia con la prima lezione.</p>'
@@ -582,21 +595,28 @@ function renderProfile() {
 }
 function renderChallenge() {
   const complete = state.challengeDays.length
-  const nextDay = complete + 1
+  const nextDay = challengeDays.find(
+    (day) => !state.challengeDays.includes(day.day),
+  )?.day
   const waiting = state.challengeLastDate === dayKey()
-  const active = challengeDays[nextDay - 1]
+  if (
+    selectedChallengeDay == null ||
+    state.challengeDays.includes(selectedChallengeDay)
+  )
+    selectedChallengeDay = nextDay
+  const active = challengeDays.find((day) => day.day === selectedChallengeDay)
   content.innerHTML =
     header(
       'PERCORSO INTENSIVO · 8 GIORNI',
       'Piccoli passi, ogni giorno.',
-      'Una sfida quotidiana per mettere in pratica frasi utili con ascolto, ripetizione e una breve lezione guidata.',
+      'Scegli una delle giornate disponibili e metti in pratica frasi utili con ascolto, ripetizione e una breve lezione guidata.',
     ) +
-    `<section class="content-card challenge-overview"><div class="panel-heading"><h2>La tua 8 Days Challenge</h2><span class="badge">${complete} / 8 COMPLETATI</span></div><div class="progress-track" role="progressbar" aria-label="Avanzamento 8 Days Challenge" aria-valuenow="${complete}" aria-valuemin="0" aria-valuemax="8"><div class="progress-fill" style="width:${(complete / 8) * 100}%"></div></div><p>Ogni tappa propone cinque frasi originali: ascolta l’italiano, prova a tradurre durante la pausa, ascolta l’inglese e ripeti. Poi verifica quello che hai imparato con quattro esercizi sulle stesse frasi. Completa un giorno alla volta.</p></section>${active ? `<section class="content-card challenge-current"><span class="eyebrow">${waiting ? 'PROSSIMA TAPPA · DOMANI' : `GIORNO ${nextDay} · LA TAPPA DI OGGI`}</span><h2>${escape(active.title)}</h2><p>${escape(active.goal)}</p>${waiting ? '<p>La prossima lezione si apre domani. Puoi ripassare le frasi dei giorni completati qui sotto.</p>' : tutorCard(active)}<div class="challenge-actions"><button class="primary" data-action="challenge-start" data-day="${nextDay}" ${waiting || (state.challengePractice[nextDay] || []).length !== active.phrases.length ? 'disabled' : ''}>${waiting ? 'TORNA DOMANI' : (state.challengePractice[nextDay] || []).length === active.phrases.length ? 'INIZIA LA LEZIONE' : 'COMPLETA PRIMA LE FRASI'}</button><button class="auth-switch" data-action="challenge-print" data-day="${nextDay}">STAMPA LA SCHEDA</button></div></section>` : `<section class="content-card challenge-current"><span class="eyebrow">TRAGUARDO RAGGIUNTO</span><h2>Hai completato gli otto giorni!</h2><p>Ripassa dal percorso o continua con le altre lezioni di inglese generale.</p></section>`}<section class="challenge-grid" aria-label="Le otto tappe">${challengeDays
+    `<section class="content-card challenge-overview"><div class="panel-heading"><h2>La tua 8 Days Challenge</h2><span class="badge">${complete} / 8 COMPLETATI</span></div><div class="progress-track" role="progressbar" aria-label="Avanzamento 8 Days Challenge" aria-valuenow="${complete}" aria-valuemin="0" aria-valuemax="8"><div class="progress-fill" style="width:${(complete / 8) * 100}%"></div></div><p>Ogni tappa propone cinque frasi originali: ascolta l’italiano, prova a tradurre durante la pausa, ascolta l’inglese e ripeti. Poi verifica quello che hai imparato con quattro esercizi sulle stesse frasi. Puoi scegliere liberamente quale giornata non ancora completata svolgere; puoi completarne una al giorno.</p></section>${active ? `<section class="content-card challenge-current"><span class="eyebrow">${waiting ? 'GIORNATA SELEZIONATA · LEZIONE DISPONIBILE DOMANI' : `GIORNO ${active.day} · GIORNATA SELEZIONATA`}</span><h2>${escape(active.title)}</h2><p>${escape(active.goal)}</p>${tutorCard(active)}<div class="challenge-actions"><button class="primary" data-action="challenge-start" data-day="${active.day}" ${waiting || (state.challengePractice[active.day] || []).length !== active.phrases.length ? 'disabled' : ''}>${waiting ? 'TORNA DOMANI' : (state.challengePractice[active.day] || []).length === active.phrases.length ? 'INIZIA LA LEZIONE' : 'COMPLETA PRIMA LE FRASI'}</button><button class="auth-switch" data-action="challenge-print" data-day="${active.day}">STAMPA LA SCHEDA</button></div></section>` : `<section class="content-card challenge-current"><span class="eyebrow">TRAGUARDO RAGGIUNTO</span><h2>Hai completato gli otto giorni!</h2><p>Ripassa dal percorso o continua con le altre lezioni di inglese generale.</p></section>`}<section class="challenge-grid" aria-label="Le otto tappe">${challengeDays
       .map((day) => {
         const done = state.challengeDays.includes(day.day)
         const reviewCount = state.challengeReview[day.day]?.length || 0
-        const isNext = day.day === nextDay
-        return `<article class="content-card challenge-day ${done ? 'completed' : isNext && !waiting ? 'available' : ''}"><span class="challenge-day-number">${done ? '✓' : String(day.day).padStart(2, '0')}</span><div><small>GIORNO ${day.day}</small><h3>${escape(day.title)}</h3><p>${escape(day.goal)}</p></div><span class="badge">${done ? 'COMPLETATO' : isNext ? (waiting ? 'DOMANI' : 'OGGI') : 'BLOCCATO'}</span>${done ? `<button class="auth-switch" data-action="tutor-review" data-day="${day.day}">${reviewCount ? `RIPASSO MIRATO · ${reviewCount}` : 'RIPASSA TUTTE LE FRASI'}</button>` : ''}</article>`
+        const selected = day.day === selectedChallengeDay
+        return `<article class="content-card challenge-day ${done ? 'completed' : 'available'} ${selected ? 'selected' : ''}"><span class="challenge-day-number">${done ? '✓' : String(day.day).padStart(2, '0')}</span><div><small>GIORNO ${day.day}</small><h3>${escape(day.title)}</h3><p>${escape(day.goal)}</p></div><span class="badge">${done ? 'COMPLETATO' : selected ? 'SELEZIONATO' : 'DISPONIBILE'}</span>${done ? `<button class="auth-switch" data-action="tutor-review" data-day="${day.day}">${reviewCount ? `RIPASSO MIRATO · ${reviewCount}` : 'RIPASSA TUTTE LE FRASI'}</button>` : `<button class="auth-switch" data-action="challenge-select" data-day="${day.day}" aria-pressed="${selected}">${selected ? 'GIORNATA SCELTA' : 'SCEGLI QUESTA GIORNATA'}</button>`}</article>`
       })
       .join(
         '',
@@ -758,6 +778,7 @@ function startLesson(id, practice = false, config = {}) {
     extraXp: config.xp,
     extraGems: config.gems,
     challengeDay: config.challengeDay || null,
+    assessmentChapter: config.assessmentChapter ?? null,
   }
   renderExercise()
   lessonDialog.showModal()
@@ -855,7 +876,7 @@ function renderExercise() {
   const q = session.questions[session.index],
     n = session.questions.length,
     label = session.title
-  lessonDialog.innerHTML = `<div class="lesson-layout"><div class="lesson-top"><button class="close-button" data-action="exit-lesson" aria-label="Esci dalla lezione">×</button><div class="progress-track" role="progressbar" aria-label="Avanzamento lezione" aria-valuenow="${session.index}" aria-valuemin="0" aria-valuemax="${n}"><div class="progress-fill" style="width:${(session.index / n) * 100}%"></div></div><small>${session.index + 1} / ${n}</small></div><section class="exercise"><p class="eyebrow">${escape(label)} · ${q.type === 'words' ? 'COSTRUISCI LA FRASE' : q.type === 'listen' ? 'ALLENA L’ASCOLTO' : session.extraId?.startsWith('story:') ? 'UNA STORIA IN TRE MOMENTI' : 'SCEGLI LA RISPOSTA'}</p><h2>${q.type === 'words' ? 'Traduci questa frase' : escape(q.prompt)}</h2>${q.context ? `<div class="story-context">${escape(q.context)}</div>` : ''}${q.type === 'words' ? `<div class="prompt-box">${escape(q.prompt)}</div><div class="answer-line" aria-label="La tua risposta" aria-live="polite"></div><div class="word-bank">${q.bank.map((w, i) => `<button class="word" data-word="${i}">${escape(w)}</button>`).join('')}</div>` : q.type === 'listen' ? `<button class="listen-button" data-action="listen" aria-label="Ascolta la frase">${icon('sound')}</button><div class="transcript-toggle"><button class="link-button" data-action="transcript">MOSTRA TRASCRIZIONE</button><p id="transcript" class="muted" hidden>${escape(q.phrase)}</p></div><div class="options">${q.options.map(optionHTML).join('')}</div>` : `<div class="options">${q.options.map(optionHTML).join('')}</div>`}</section><footer class="lesson-bottom"><div class="feedback" aria-live="polite"></div><button class="primary" data-action="check" disabled>VERIFICA</button></footer></div>`
+  lessonDialog.innerHTML = `<div class="lesson-layout"><div class="lesson-top"><button class="close-button" data-action="exit-lesson" aria-label="Esci dalla lezione">×</button><div class="progress-track" role="progressbar" aria-label="Avanzamento lezione" aria-valuenow="${session.index}" aria-valuemin="0" aria-valuemax="${n}"><div class="progress-fill" style="width:${(session.index / n) * 100}%"></div></div><small>${session.index + 1} / ${n}</small></div><section class="exercise"><p class="eyebrow">${escape(label)} · ${q.type === 'words' ? 'COSTRUISCI LA FRASE' : q.type === 'listen' ? 'ALLENA L’ASCOLTO' : session.extraId?.startsWith('story:') ? 'UNA STORIA IN TRE MOMENTI' : 'SCEGLI LA RISPOSTA'}</p><h2>${q.type === 'words' ? 'Traduci questa frase' : escape(q.prompt)}</h2>${q.context ? `<div class="story-context">${escape(q.context)}</div>` : ''}${q.type === 'words' ? `<div class="prompt-box">${escape(q.prompt)}</div><div class="answer-line" aria-label="La tua risposta" aria-live="polite"></div><div class="word-bank">${q.bank.map((w, i) => `<button class="word" data-word="${i}">${escape(w)}</button>`).join('')}</div>` : q.type === 'listen' ? `<button class="listen-button" data-action="listen" aria-label="Ascolta la frase">${icon('sound')}</button>${session.assessmentChapter === null ? `<div class="transcript-toggle"><button class="link-button" data-action="transcript">MOSTRA TRASCRIZIONE</button><p id="transcript" class="muted" hidden>${escape(q.phrase)}</p></div>` : ''}<div class="options">${q.options.map(optionHTML).join('')}</div>` : `<div class="options">${q.options.map(optionHTML).join('')}</div>`}</section><footer class="lesson-bottom"><div class="feedback" aria-live="polite"></div><button class="primary" data-action="check" disabled>VERIFICA</button></footer></div>`
 }
 function optionHTML(o, i) {
   return `<button class="option" data-option="${i}" aria-pressed="false"><span class="key">${i + 1}</span>${escape(o)}</button>`
@@ -934,6 +955,21 @@ function finish() {
   const total = session.questions.length,
     accuracy = Math.round((session.correct / total) * 100)
   let result
+  if (session.assessmentChapter !== null) {
+    result = completeChapterAssessment(state, session.assessmentChapter, {
+      correct: session.correct,
+      total,
+      listening: session.listening,
+    })
+    if (result.passed) {
+      state = result.state
+      save()
+      render()
+    }
+    const lastChapter = session.assessmentChapter === chapters.length - 1
+    lessonDialog.innerHTML = `<div class="lesson-layout"><section class="summary"><img src="mascot.svg" alt="La mascotte Luma"><p class="eyebrow">VALUTAZIONE · CAPITOLO ${session.assessmentChapter + 1}</p><h2>${result.passed ? 'Capitolo superato!' : 'Continua ad allenarti'}</h2><p>${session.correct} risposte corrette su ${total} · ${result.accuracy}%</p><p>${result.passed ? (lastChapter ? 'Hai superato l’ultimo capitolo del corso. Puoi ripassare tutte le lezioni.' : 'Le lezioni rimanenti del capitolo sono superate. Il prossimo capitolo è sbloccato.') : 'Servono almeno 7 risposte corrette su 8. I tuoi progressi restano invariati: studia le lezioni oppure riprova la valutazione.'}</p>${result.passed ? `<p>+${result.xp} XP · Valutazione salvata nel tuo profilo.</p>` : ''}</section><footer class="lesson-bottom"><button class="primary" data-action="finish">${result.passed && !lastChapter ? 'VAI AL PROSSIMO CAPITOLO' : 'TORNA AL PERCORSO'}</button></footer></div>`
+    return
+  }
   if (session.challengeDay) {
     result = completeChallengeDay(state, session.challengeDay, {
       correct: session.correct,
@@ -1088,6 +1124,32 @@ document.addEventListener('click', async (event) => {
     }
   }
   switch (b.dataset.action) {
+    case 'assessment-info': {
+      const chapter = Number(b.dataset.chapterIndex)
+      if (!canAssessChapter(state, chapter)) break
+      const count = chapterAssessmentQuestions(chapter).length
+      info(
+        'Valutazione del capitolo',
+        `<p><strong>${escape(chapters[chapter].title)}</strong></p><p>${count} domande su tutte le lezioni, incluse prove di ascolto. Servono almeno ${Math.ceil(count * ASSESSMENT_PASS_RATIO)} risposte corrette (${ASSESSMENT_PASS_RATIO * 100}% minimo).</p><p>Se superi la prova, salti solo le lezioni rimanenti di questo capitolo e ottieni 20 XP. Ogni capitolo successivo ha una propria valutazione. Se interrompi o non raggiungi la soglia, i progressi restano invariati.</p><p>Attiva l’audio: durante la prova di ascolto la trascrizione non è disponibile.</p><button class="primary" data-action="assessment-start" data-chapter-index="${chapter}">AVVIA VALUTAZIONE</button>`,
+      )
+      break
+    }
+    case 'assessment-start': {
+      const chapter = Number(b.dataset.chapterIndex)
+      if (!canAssessChapter(state, chapter)) break
+      infoDialog.close()
+      startLesson(
+        lessons.findIndex((lesson) => lesson.chapter === chapter),
+        true,
+        {
+          chapter,
+          assessmentChapter: chapter,
+          title: `Valutazione · Capitolo ${chapter + 1}`,
+          questions: chapterAssessmentQuestions(chapter),
+        },
+      )
+      break
+    }
     case 'logout':
       tutor.stop()
       tutorIndex = 0
@@ -1183,12 +1245,12 @@ document.addEventListener('click', async (event) => {
       const dayNumber = Number(b.dataset.day)
       const day = challengeDays[dayNumber - 1]
       if (
-        dayNumber !== state.challengeDays.length + 1 ||
+        state.challengeDays.includes(dayNumber) ||
         state.challengeLastDate === dayKey() ||
         !day ||
         (state.challengePractice[dayNumber] || []).length !== day.phrases.length
       ) {
-        notify('La prossima tappa sarà disponibile domani.')
+        notify('Scegli una giornata disponibile e completa prima le sue frasi.')
         return
       }
       startLesson(day.lessonIndex, true, {
@@ -1197,6 +1259,22 @@ document.addEventListener('click', async (event) => {
         questions: day.questions,
         challengeDay: dayNumber,
       })
+      break
+    }
+    case 'challenge-select': {
+      const dayNumber = Number(b.dataset.day)
+      if (
+        !Number.isInteger(dayNumber) ||
+        dayNumber < 1 ||
+        dayNumber > challengeDays.length ||
+        state.challengeDays.includes(dayNumber)
+      )
+        break
+      selectedChallengeDay = dayNumber
+      tutor.stop()
+      tutorIndex = 0
+      renderChallenge()
+      window.scrollTo(0, 0)
       break
     }
     case 'challenge-print': {

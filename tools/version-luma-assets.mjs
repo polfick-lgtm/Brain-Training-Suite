@@ -5,6 +5,22 @@ const indexPath = 'dist/luma/index.html'
 const manifestPath = 'dist/luma/manifest.webmanifest'
 const manifest = JSON.parse(await readFile(manifestPath, 'utf8'))
 
+// Version imported modules too: an updated app must not reuse an older model
+// from the browser cache when a release adds new exported functions.
+const appPath = 'dist/luma/app.mjs'
+let app = await readFile(appPath, 'utf8')
+for (const match of app.matchAll(
+  /(from\s+['"])(\.\/[a-z0-9-]+\.mjs)(?:\?v=[a-f0-9]+)?(['"])/g,
+)) {
+  const content = await readFile(`dist/luma/${match[2].slice(2)}`)
+  const version = createHash('sha256')
+    .update(content)
+    .digest('hex')
+    .slice(0, 16)
+  app = app.replace(match[0], `${match[1]}${match[2]}?v=${version}${match[3]}`)
+}
+await writeFile(appPath, app)
+
 for (const icon of manifest.icons) {
   const asset = icon.src.split('?')[0]
   const content = await readFile(`dist/luma/${asset}`)

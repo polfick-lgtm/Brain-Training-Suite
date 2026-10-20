@@ -482,6 +482,7 @@ export function initialState() {
     challengePractice: {},
     challengeReview: {},
     challengeLastDate: null,
+    chapterAssessments: [],
   }
 }
 export function hydrate(raw) {
@@ -556,6 +557,32 @@ export function hydrate(raw) {
         /^\d{4}-\d{2}-\d{2}$/.test(v.challengeLastDate)
           ? v.challengeLastDate
           : null,
+      chapterAssessments: chapters.flatMap((_, chapter) => {
+        const entry = (
+          Array.isArray(v.chapterAssessments) ? v.chapterAssessments : []
+        ).find(
+          (item) =>
+            item?.chapter === chapter &&
+            Number.isInteger(item.correct) &&
+            item.total === chapterAssessmentQuestions(chapter).length &&
+            item.correct >= Math.ceil(item.total * ASSESSMENT_PASS_RATIO) &&
+            item.correct <= item.total &&
+            typeof item.date === 'string' &&
+            /^\d{4}-\d{2}-\d{2}$/.test(item.date),
+        )
+        return entry &&
+          Array.isArray(v.completed) &&
+          chapterLessonIds(chapter).every((id) => v.completed.includes(id))
+          ? [
+              {
+                chapter,
+                correct: entry.correct,
+                total: entry.total,
+                date: entry.date,
+              },
+            ]
+          : []
+      }),
       challengePractice: Object.fromEntries(
         Array.from({ length: 8 }, (_, i) => String(i + 1)).map((day) => [
           day,
@@ -683,6 +710,88 @@ export function completeLesson(
   s.history = s.history.slice(-30)
   return { state: s, xp, first, accuracy: Math.round((correct / total) * 100) }
 }
+export const ASSESSMENT_PASS_RATIO = 0.8
+
+function chapterLessonIds(chapter) {
+  return lessons.flatMap((lesson, id) =>
+    lesson.chapter === chapter ? [id] : [],
+  )
+}
+
+export function chapterAssessmentQuestions(chapter) {
+  if (!Number.isInteger(chapter) || !chapters[chapter])
+    throw new Error('Capitolo non valido')
+  return chapterLessonIds(chapter).flatMap((id, index) => {
+    const indices = index % 2 === 0 ? [0, 1] : [2, 3]
+    return indices.map((question) =>
+      structuredClone(lessons[id].questions[question]),
+    )
+  })
+}
+
+export function canAssessChapter(state, chapter) {
+  const next = nextLesson(state)
+  return (
+    Number.isInteger(chapter) &&
+    Boolean(chapters[chapter]) &&
+    next >= 0 &&
+    lessons[next].chapter === chapter
+  )
+}
+
+export function completeChapterAssessment(
+  state,
+  chapter,
+  { correct, total, listening = 0 },
+  now = new Date(),
+) {
+  if (!canAssessChapter(state, chapter))
+    throw new Error(
+      'Valutazione disponibile solo per il capitolo corrente non completato.',
+    )
+  const questions = chapterAssessmentQuestions(chapter)
+  if (
+    !Number.isInteger(correct) ||
+    !Number.isInteger(total) ||
+    total !== questions.length ||
+    correct < 0 ||
+    correct > total ||
+    !Number.isInteger(listening) ||
+    listening < 0 ||
+    listening > correct ||
+    listening >
+      questions.filter((question) => question.type === 'listen').length
+  )
+    throw new Error('Risultato della valutazione non valido.')
+  const passed = correct / total >= ASSESSMENT_PASS_RATIO
+  const s = structuredClone(state)
+  const accuracy = Math.round((correct / total) * 100)
+  if (!passed) return { state: s, passed, accuracy, xp: 0, gems: 0 }
+  const xp = 20
+  s.completed = [
+    ...new Set([...s.completed, ...chapterLessonIds(chapter)]),
+  ].sort((a, b) => a - b)
+  s.chapterAssessments = [
+    ...(s.chapterAssessments || []),
+    { chapter, correct, total, date: dayKey(now) },
+  ]
+  s.xp += xp
+  studyDay(s, xp, now)
+  s.daily.lessons++
+  s.daily.listening += listening
+  if (correct / total >= 0.9) s.daily.accurate++
+  s.history.push({
+    date: dayKey(now),
+    xp,
+    lesson: null,
+    chapter,
+    accuracy,
+    kind: 'assessment',
+  })
+  s.history = s.history.slice(-30)
+  return { state: s, passed, accuracy, xp, gems: 0 }
+}
+
 export function completeExtra(
   state,
   id,
@@ -734,9 +843,9 @@ export function completeChallengeDay(
     !Number.isInteger(day) ||
     day < 1 ||
     day > 8 ||
-    day !== state.challengeDays.length + 1
+    state.challengeDays.includes(day)
   )
-    throw new Error('Completa i giorni della sfida in ordine.')
+    throw new Error('Questa giornata non è disponibile o è già completata.')
   if (state.challengeLastDate === dayKey(now))
     throw new Error(
       'Hai già completato la tappa di oggi. Torna domani per continuare.',

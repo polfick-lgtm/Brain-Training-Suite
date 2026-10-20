@@ -21,51 +21,51 @@ test('the challenge contains eight guided lessons with four exercises each', () 
   )
 })
 
-test('challenge days reward progress and unlock in daily order', () => {
+test('challenge days can be chosen freely while completion stays limited to one per day', () => {
   const today = new Date('2026-10-16T10:00:00')
   const first = completeChallengeDay(
     initialState(),
-    1,
+    4,
     { correct: 4, total: 4, listening: 1 },
     today,
   )
-  assert.deepEqual(first.state.challengeDays, [1])
+  assert.deepEqual(first.state.challengeDays, [4])
   assert.equal(first.xp, 20)
   assert.equal(first.gems, 3)
   assert.throws(
-    () => completeChallengeDay(first.state, 2, { correct: 4, total: 4 }, today),
+    () => completeChallengeDay(first.state, 5, { correct: 4, total: 4 }, today),
     /domani/,
   )
   assert.throws(
     () =>
       completeChallengeDay(
         first.state,
-        3,
+        4,
         { correct: 4, total: 4 },
         new Date('2026-10-17T10:00:00'),
       ),
-    /ordine/,
+    /già completata/,
   )
 
   const second = completeChallengeDay(
     first.state,
-    2,
+    1,
     { correct: 3, total: 4 },
     new Date('2026-10-17T10:00:00'),
   )
-  assert.deepEqual(second.state.challengeDays, [1, 2])
+  assert.deepEqual(second.state.challengeDays, [4, 1])
   assert.equal(second.state.history.at(-1).kind, 'challenge')
 })
 
 test('challenge state survives export and hydration', () => {
   const state = completeChallengeDay(
     initialState(),
-    1,
+    4,
     { correct: 3, total: 4 },
     new Date('2026-10-16T10:00:00'),
   ).state
   const restored = hydrate(JSON.stringify(state))
-  assert.deepEqual(restored.challengeDays, [1])
+  assert.deepEqual(restored.challengeDays, [4])
   assert.equal(restored.challengeLastDate, '2026-10-16')
   state.challengePractice = { 2: [0, 1, 1, 99, -1], 99: [0] }
   const resumed = hydrate(JSON.stringify(state))
@@ -76,13 +76,13 @@ test('challenge state survives export and hydration', () => {
 test('challenge stores a safe, deduplicated list of phrases to review', () => {
   const result = completeChallengeDay(
     initialState(),
-    1,
+    4,
     { correct: 3, total: 4, missedPhrases: [0, 2, 2] },
     new Date('2026-10-16T10:00:00'),
   )
-  assert.deepEqual(result.state.challengeReview[1], [0, 2])
+  assert.deepEqual(result.state.challengeReview[4], [0, 2])
   assert.deepEqual(
-    hydrate(JSON.stringify(result.state)).challengeReview[1],
+    hydrate(JSON.stringify(result.state)).challengeReview[4],
     [0, 2],
   )
   assert.throws(

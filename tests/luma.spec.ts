@@ -87,6 +87,14 @@ test('an approved player can complete and sync the first challenge day', async (
     0,
   )
   await page.getByRole('link', { name: '8 Giorni' }).click()
+  await page.locator('[data-action="challenge-select"][data-day="3"]').click()
+  await expect(page.locator('.challenge-current .eyebrow')).toHaveText(
+    'GIORNO 3 · GIORNATA SELEZIONATA',
+  )
+  await page.locator('[data-action="challenge-select"][data-day="1"]').click()
+  await expect(page.locator('.challenge-current .eyebrow')).toHaveText(
+    'GIORNO 1 · GIORNATA SELEZIONATA',
+  )
   await expect(page.locator('[data-tutor-answer]')).toBeHidden()
   await page.getByLabel('Pausa per tradurre').selectOption('3')
   await page.getByRole('button', { name: 'ASCOLTA IL TUTOR' }).click()

@@ -2198,6 +2198,14 @@ body.auth-required {
   overflow: hidden;
 }
 /* Eight-day guided challenge */
+.chapter-assessment h2 {
+  font-size: 20px;
+}
+.chapter-assessment .secondary {
+  max-width: 100%;
+  white-space: normal;
+}
+
 .challenge-overview .progress-track {
   margin: 14px 0;
 }
@@ -2290,6 +2298,10 @@ body.auth-required {
 }
 .challenge-day.completed {
   border-color: #b7e7d1;
+}
+.challenge-day.selected {
+  border-color: #0b8976;
+  box-shadow: 0 0 0 2px rgb(11 137 118 / 12%);
 }
 .challenge-print-sheet {
   display: none;

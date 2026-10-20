@@ -130,6 +130,24 @@ dispositivo e revoca delle sessioni. La prima associazione del vecchio salvatagg
 locale resta limitata al relativo account. Una copia dei progressi resta nel browser;
 gli aggiornamenti concorrenti dello stesso profilo seguono l’ultimo salvataggio ricevuto.
 
+## Valutazioni per avanzare tra i capitoli
+
+Nel percorso Impara, il pulsante **VALUTA E SALTA IL CAPITOLO** apre una prova
+del capitolo corrente non ancora completato. La prova contiene otto domande,
+due per ciascuna lezione, con traduzione, composizione e ascolto senza trascrizione.
+La soglia è l'80%: con otto domande occorrono almeno sette risposte corrette.
+
+Il superamento registra punteggio e data nel profilo, segna come superate le
+lezioni rimanenti del solo capitolo valutato e sblocca il successivo. Assegna
+20 XP una sola volta, senza i premi individuali delle lezioni saltate. Le lezioni
+restano disponibili per il ripasso; ogni capitolo successivo richiede la propria
+valutazione. Un esito insufficiente o l'interruzione lasciano invariati i progressi.
+I profili precedenti sono compatibili; il backend salva il nuovo dato nel documento
+dei progressi senza migrazioni del database. Si tratta di autovalutazioni didattiche
+gestite dal client, non di certificazioni o esami con controllo anti-manomissione.
+
+## Percorso 8 Giorni
+
 Il percorso 8 Giorni usa esercizi e frasi originali Luma. Non include video, PDF
 proprietari, dirette o tutor del corso Learnworlds preso come riferimento.
 
