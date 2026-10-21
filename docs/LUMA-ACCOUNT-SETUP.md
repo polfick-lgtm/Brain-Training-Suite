@@ -99,6 +99,14 @@ sessioni e il percorso dati. L’origin di GitHub Pages è `https://polfick-lgtm
 la configurazione effettiva. Eventuali header proxy devono essere configurati
 esclusivamente per il proxy autorizzato, senza fidarsi di header forniti da Internet.
 
+Waitress deve fidarsi soltanto di `127.0.0.1` e dell'header `X-Forwarded-For`,
+con `trusted_proxy_count=1` e rimozione degli altri header proxy attiva. Quando
+il tunnel passa dal proxy condiviso sulla porta 8797, anche quel server deve
+conservare l'indirizzo del client. La sola risposta health non verifica il login:
+un header rimosso lungo la catena blocca l'accesso prima del controllo password.
+I test `server/tests/test_proxy_chain.py` verificano il trasporto HTTP reale su
+uno e due passaggi, gli indirizzi mancanti o malformati e i limiti per client.
+
 ## Backup, aggiornamenti e rollback
 
 A ogni aggiornamento il programma di installazione esegue un backup consistente

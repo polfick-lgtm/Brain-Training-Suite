@@ -82,7 +82,10 @@ class Settings:
             raise ValueError("trusted_proxy_addresses must contain valid IP addresses.") from exc
 
     def client_address(self, environ) -> str:
-        peer = environ.get("REMOTE_ADDR", "unknown")
+        try:
+            peer = str(ipaddress.ip_address(environ.get("REMOTE_ADDR", "")))
+        except (TypeError, ValueError):
+            raise ApiError(400, "Indirizzo del client non valido.") from None
         if peer not in self.trusted_proxy_addresses:
             return peer
 
@@ -354,6 +357,17 @@ class Application:
         return [payload]
 
 
+def waitress_proxy_options():
+    # Only the local tunnel/forwarder may supply a client address. Waitress
+    # normalizes the last hop into REMOTE_ADDR and removes other proxy headers.
+    return {
+        "trusted_proxy": "127.0.0.1",
+        "trusted_proxy_count": 1,
+        "trusted_proxy_headers": {"x-forwarded-for"},
+        "clear_untrusted_proxy_headers": True,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description="Luma isolated account API")
     parser.add_argument("--config", type=Path, required=True)
@@ -386,7 +400,8 @@ def main():
         del seed
     from waitress import serve
     serve(application, host=data.get("host", "127.0.0.1"), port=int(data.get("port", 8796)),
-          threads=4, max_request_body_size=BODY_LIMIT, channel_timeout=30, ident="Luma")
+          threads=4, max_request_body_size=BODY_LIMIT, channel_timeout=30, ident="Luma",
+          **waitress_proxy_options())
 
 
 if __name__ == "__main__":
