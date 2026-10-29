@@ -9,11 +9,13 @@ export default defineConfig({
     VitePWA({
       registerType: 'prompt',
       workbox: {
-        navigateFallbackDenylist: [/^\/Brain-Training-Suite\/luma\//],
-        globIgnores: ['**/luma/**'],
+        navigateFallbackDenylist: [
+          /^\/Brain-Training-Suite\/(?:luma|benessere)(?:\/|$)/,
+        ],
+        globIgnores: ['**/luma/**', '**/benessere/**'],
         runtimeCaching: [
           {
-            urlPattern: /\/luma\/.*/,
+            urlPattern: /\/(?:luma|benessere)(?:\/|$)/,
             handler: 'NetworkOnly',
           },
         ],
