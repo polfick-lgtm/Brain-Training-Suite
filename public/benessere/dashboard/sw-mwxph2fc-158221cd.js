@@ -1,0 +1,26 @@
+/* Benessere: only versioned app shell; no API responses, credentials or diary data. */
+const CACHE="benessere-shell-v1-mwxph2fc-158221cd";
+const BASE="/Brain-Training-Suite/benessere";
+const ASSETS=["/Brain-Training-Suite/benessere/food-model/model.json","/Brain-Training-Suite/benessere/food-model/weights.bin","/Brain-Training-Suite/benessere/_next/static/17vLHBhyxpof8y_rupts2/_buildManifest.js","/Brain-Training-Suite/benessere/_next/static/17vLHBhyxpof8y_rupts2/_ssgManifest.js","/Brain-Training-Suite/benessere/_next/static/chunks/0f482be1.34981ccab22a9c8e.js","/Brain-Training-Suite/benessere/_next/static/chunks/12.06a7f14bd6716249.js","/Brain-Training-Suite/benessere/_next/static/chunks/131-0b5e86cd969f3294.js","/Brain-Training-Suite/benessere/_next/static/chunks/154f220f.7866bda93a32366e.js","/Brain-Training-Suite/benessere/_next/static/chunks/195.0e66f59c52af3b7d.js","/Brain-Training-Suite/benessere/_next/static/chunks/4044f0b0.aa877f68bb0c3122.js","/Brain-Training-Suite/benessere/_next/static/chunks/489.89518ea37db8f479.js","/Brain-Training-Suite/benessere/_next/static/chunks/793-edd52c1a054a10e7.js","/Brain-Training-Suite/benessere/_next/static/chunks/823.2fee8bbe386f4516.js","/Brain-Training-Suite/benessere/_next/static/chunks/app/dashboard/page-63453f9d641d9f9b.js","/Brain-Training-Suite/benessere/_next/static/chunks/app/layout-60cf3f16dffd3538.js","/Brain-Training-Suite/benessere/_next/static/chunks/app/page-7c76fdd512e4264a.js","/Brain-Training-Suite/benessere/_next/static/chunks/app/robots.txt/route-e876d837ab831521.js","/Brain-Training-Suite/benessere/_next/static/chunks/app/_not-found/page-55ca3cd59a24eeca.js","/Brain-Training-Suite/benessere/_next/static/chunks/b9695103.952cfb16ad6ad1d4.js","/Brain-Training-Suite/benessere/_next/static/chunks/c7879cf7-93b1c04336dd24e6.js","/Brain-Training-Suite/benessere/_next/static/chunks/cbf35177.354222540bcd7cd8.js","/Brain-Training-Suite/benessere/_next/static/chunks/d0ad970d.2b73a9a4020cc003.js","/Brain-Training-Suite/benessere/_next/static/chunks/dfc26138.1fff297b97f3e6f5.js","/Brain-Training-Suite/benessere/_next/static/chunks/framework-bbd80d9fe63ee319.js","/Brain-Training-Suite/benessere/_next/static/chunks/main-8ca2f1eb6c5ad5bc.js","/Brain-Training-Suite/benessere/_next/static/chunks/main-app-ea923c9aed58ec6e.js","/Brain-Training-Suite/benessere/_next/static/chunks/pages/_app-096a873e36342d7a.js","/Brain-Training-Suite/benessere/_next/static/chunks/pages/_error-c898233fe134fb11.js","/Brain-Training-Suite/benessere/_next/static/chunks/polyfills-42372ed130431b0a.js","/Brain-Training-Suite/benessere/_next/static/chunks/webpack-0ff1abb65983ffc6.js","/Brain-Training-Suite/benessere/_next/static/css/2cd8ab084faf2131.css","/Brain-Training-Suite/benessere/dashboard/index.html","/Brain-Training-Suite/benessere/dashboard/index.txt","/Brain-Training-Suite/benessere/dashboard/manifest-mwxph2fc-158221cd.webmanifest","/Brain-Training-Suite/benessere/dashboard/icon-mwxph2fc-158221cd-192.png","/Brain-Training-Suite/benessere/dashboard/icon-mwxph2fc-158221cd-512.png"];
+const ALLOWED=new Set(ASSETS);
+const SHELL=BASE+'/dashboard/index.html';
+const gatewayHeaders=request=>{const headers=new Headers(request?.headers);headers.set('ngrok-skip-browser-warning','1');return headers;};
+self.addEventListener('install',event=>event.waitUntil((async()=>{
+ const cache=await caches.open(CACHE);
+ try{for(const path of ASSETS){const r=await fetch(new Request(path,{credentials:'same-origin',cache:'reload',headers:gatewayHeaders()}));if(!r.ok||r.redirected)throw Error('Offline shell unavailable');await cache.put(path,r);}}
+ catch(e){await caches.delete(CACHE);throw e;}
+})()));
+self.addEventListener('activate',event=>event.waitUntil((async()=>{
+ const names=(await caches.keys()).filter(k=>k.startsWith('benessere-shell-v1-'));
+ for(const name of names.filter(k=>k!==CACHE).slice(0,-1))await caches.delete(name);
+ await self.clients.claim();
+})()));
+self.addEventListener('message',event=>{if(event.data?.type==='ACTIVATE_UPDATE')event.waitUntil(self.skipWaiting());});
+self.addEventListener('fetch',event=>{
+ const r=event.request,u=new URL(r.url);
+ if(r.method!=='GET'||u.origin!==self.location.origin||u.pathname.startsWith(BASE+'/api/'))return;
+ if(r.mode==='navigate'&&[BASE+'/dashboard/',BASE+'/dashboard/index.html',BASE+'/dashboard'].includes(u.pathname)){
+  event.respondWith((async()=>{const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),6000);try{const response=await fetch(r,{signal:controller.signal,headers:gatewayHeaders(r),redirect:'follow'});if(response.redirected&&response.status===200&&response.url&&new URL(response.url).origin===self.location.origin&&new URL(response.url).pathname===BASE+'/'){const shell=await(await caches.open(CACHE)).match(SHELL);if(shell)return shell;}if(response.status<500)return response;throw Error('Gateway unavailable');}catch{const shell=await(await caches.open(CACHE)).match(SHELL);return shell||new Response('Apri l’app online per preparare la copia offline.',{status:503,headers:{'Content-Type':'text/plain;charset=utf-8'}});}finally{clearTimeout(timer);}})());return;
+ }
+ if(ALLOWED.has(u.pathname))event.respondWith((async()=>{const cache=await caches.open(CACHE),saved=await cache.match(u.pathname);return saved||fetch(r,{headers:gatewayHeaders(r)});})());
+});
