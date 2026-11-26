@@ -1,0 +1,5 @@
+Ingredient segmentation: DeepLabV3+ / MobileNetV2 by mawiie, MIT.
+https://huggingface.co/mawiie/food-segmentation-mobilenet/tree/93d8c84b121ecce76ed752be538e01d72df15825
+Converted to ONNX with ImageNet normalization and a subsampled prediction map.
+Training dataset: FoodSeg103, Wu et al. (2021).
+Inference runtime: Microsoft ONNX Runtime Web 1.20.1, MIT.
